@@ -107,3 +107,6 @@ eon-scroll:not(.eon-scroll-native) > .eon-scroll-content::-webkit-scrollbar-corn
 .eon-scroll-active {
   display: flex;
 }
+.eon-scroll-flexContainer {
+  display: flex;
+}

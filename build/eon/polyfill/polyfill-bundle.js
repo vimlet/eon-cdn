@@ -1,4 +1,8 @@
-eon = eon || {};
+var eon = eon || {};
+
+eon.debug = eon.debug || {};
+eon.debug.polyfill = eon.debug.polyfill || false;
+
 eon.polyfills = eon.polyfills || {};
 
 eon.polyfills.customElements = true;

@@ -1,8 +1,8 @@
-eon = eon || {};
+var eon = eon || {};
+
 eon.debug = eon.debug || {};
 eon.debug.polyfill = eon.debug.polyfill || false;
 
-eon = eon || {};
 eon.polyfills = eon.polyfills || {};
 
 eon.polyfills.customElements = true;
@@ -2656,7 +2656,6 @@ if (eon.polyfills.needClassListAddPolyfill()) {
   return pointerevents;
 });
 
-var eon = eon || {};
 
 (function () {
     var eon = this;
@@ -2666,12 +2665,7 @@ var eon = eon || {};
 // DEBUG
 // ############################################################################################
 
-eon.debug = eon.debug || {};
-
-eon.debug.polyfill = eon.debug.polyfill || false;
-
 eon.warn = eon.warn || {};
-
 eon.error = eon.error || {};
 
 eon.debug.log = function(condition, message) {
@@ -2768,8 +2762,7 @@ if (eon.addViewportMeta) {
 if (!eon.theme) {
     eon.theme = "noire";
 }    
-    eon.polyfills = eon.polyfills || {};
-
+    
 // ############################################################################################
 // POLYFILL DETECTION
 // ############################################################################################
@@ -7833,7 +7826,7 @@ eon.initializeDisplay = function (el, config) {
 
     if (!eon.rules[name]) {
 
-        ruleIndex = eon.style.sheet.insertRule(name + " { display: " + display + "; }", 0);
+        ruleIndex = eon.style.sheet.insertRule(name + " { display: " + display + "; -webkit-tap-highlight-color: transparent;}", 0);
         eon.rules[name] = eon.style.sheet.cssRules[ruleIndex];
 
     }

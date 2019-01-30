@@ -48,7 +48,6 @@ eon-checkbox[readonly="false"] .eon-checkbox-label {
   -webkit-transition: 0.3s ease all;
   -moz-transition: 0.3s ease all;
   transition: 0.3s ease all;
-  background-color: #18c796;
 }
 .eon-checkbox-input[type="checkbox"]:disabled + .eon-checkbox-label .eon-checkbox-span {
   cursor: auto;

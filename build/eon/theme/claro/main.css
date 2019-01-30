@@ -3,9 +3,8 @@
            loadingmask, menu, swiper, tab, tabs, togglemenu, video) */
 /* Set 2 - Elements (button, checkbox, combobox, spinner, text, 
            radio, contextmenu, slider, treenode) */
-html,
-body {
-  font-family: sans-serif;
+body[theme="claro"] {
+  font-family: helvetica;
   background-color: #ffffff;
   color: #888888;
 }
@@ -350,6 +349,10 @@ body {
   user-select: none;
   /* Rules below not implemented in browsers yet */
   -o-user-select: none;
+}
+@font-face {
+  font-family: "helvetica";
+  src: url("../font/helvetica/Helvetica.ttf");
 }
 /* vicon font */
 @font-face {

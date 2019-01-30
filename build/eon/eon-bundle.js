@@ -5927,7 +5927,7 @@ eon.import = function (param) {
 };
 
 eon.insertImport = function (href) {
-
+    
     var elementName;
 
     elementName = (href.indexOf(".html") > -1) ? href.match(/[^\/]*$/g)[0].replace(".html", "").toLowerCase() : href.match(/[^\/]*$/g)[0].toLowerCase();
@@ -5949,6 +5949,7 @@ eon.insertImport = function (href) {
     eon.imports.templates = eon.imports.templates || {};
     eon.imports.paths = eon.imports.paths || {};
     eon.imports.config = eon.imports.config || {};
+    eon.imports.errors = eon.imports.errors || {};
 
     if (!(elementName in eon.imports.templates)) {
 
@@ -5969,7 +5970,21 @@ eon.insertImport = function (href) {
         xhttp.onreadystatechange = function () {
 
             if (this.readyState == 4 && this.status == 200) {
+
                 eon.insertFragment(elementName, this.responseText);
+
+            } else if (this.readyState == 4) {
+
+                // Since this element can't be imported, we reduce the total components amount so that the execution may continue
+                eon.imports.total--;
+
+                // Removes it from the already saved objects
+                delete eon.imports.templates[elementName];
+                delete eon.imports.paths[elementName];
+
+                // Saves it into the erros object
+                eon.imports.errors[elementName] = this.status;
+
             }
         };
 

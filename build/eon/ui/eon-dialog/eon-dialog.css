@@ -54,7 +54,7 @@
 .eon-dialog-headingButtons {
   display: flex;
   justify-content: flex-end;
-  margin-right: -5px;
+  margin: -5px -5px 0 0;
 }
 .eon-dialog-dialog .eon-dialog-close,
 .eon-dialog-dialog .eon-dialog-minimize,

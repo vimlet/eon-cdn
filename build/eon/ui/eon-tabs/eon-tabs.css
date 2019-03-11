@@ -34,7 +34,7 @@ eon-tabs .selectable {
   border-right-style: solid;
   align-items: center;
   justify-content: center;
-  padding: 0 35px;
+  padding: 0 40px;
   -webkit-transition: background-color 0.2s cubic-bezier(0.4, 0, 0.2, 0);
   -moz-transition: background-color 0.2s cubic-bezier(0.4, 0, 0.2, 0);
   transition: background-color 0.2s cubic-bezier(0.4, 0, 0.2, 0);
@@ -59,7 +59,7 @@ eon-tabs .selectable {
   position: relative;
   display: flex;
   flex-direction: row;
-  height: 40px;
+  height: 50px;
 }
 .eon-tabs-region {
   position: relative;

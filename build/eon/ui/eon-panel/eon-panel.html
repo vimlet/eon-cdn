@@ -5,7 +5,8 @@
       style: "eon-panel.css",
   
       dependencies: [
-        "../eon-scroll"
+        "../eon-scroll",
+        "../eon-section"
       ],
       privateProperties: {
         /*
@@ -59,11 +60,21 @@
         },
         /*
           @property {Object} fill
-          @description Indicates whether the eon-scroll will auto-fill its container or grow according to its content until it fills its container
+          @description Indicates whether the panel will auto-fill its container or grow according to its content until it fills its container
           Values true, false
           Default: true
         */
         fill: {
+          value: true,
+          reflect: true
+        },
+        /*
+          @property {Object} scrollFill
+          @description Indicates whether the eon-scroll will auto-fill its container or grow according to its content until it fills its container
+          Values true, false
+          Default: true
+        */
+        scrollFill: {
           value: true,
           reflect: true
         },
@@ -117,8 +128,8 @@
           Default: true
         */
         defaultStyle: {
-            value: true,
-            reflect: true
+          value: true,
+          reflect: true
         }
       },
       privateFunctions: {
@@ -127,22 +138,195 @@
           @description Check if the default element style should be applied
         */
         setDefaultStyle: function () {
-            var el = this;
-            // Check default style configuration
-            if(!eon.util.isTrue(el.defaultStyle)) {
-                // Remove default style
-                el.content.classList.remove("eon-spaced-container");
-            } else {
-                // Spaced items container
-                el.content.classList.add("eon-spaced-container");
-            }
-            // Check fill behavior
-            if(eon.util.isTrue(el.fill)) {
-                el.classList.add("eon-fill");
-            }
+          var el = this;
+          // Check default style configuration
+          if (!eon.util.isTrue(el.defaultStyle)) {
+            // Remove default style
+            el.content.classList.remove("eon-spaced-container");
+          } else {
+            // Spaced items container
+            el.content.classList.add("eon-spaced-container");
+          }
+          // Check fill behavior
+          if (eon.util.isTrue(el.fill)) {
+            el.classList.add("eon-fill");
+          }
         },
         /*
-          @function (private) importContent
+          @function (private) _setUpContent
+          @description 
+        */
+        setUpContent: function () {
+          var el = this;
+          // Check panel structure
+          el._refs.header = el.source.querySelector("[type='header']");
+          if(el._refs.header) {
+            el._setUpSections();
+          } else {
+            el._setUpSimple();
+          }
+          // Configure eon-scroll
+          el._setUpScroll();
+        },
+        /*
+          @function (private) _setUpSections
+          @description 
+        */
+        setUpSections: function () {
+          var el = this;
+          // Create content section if not exists
+          el._refs.content = el.source.querySelector("[type='content']");
+          if(!el._refs.content) {
+            el._refs.content = document.createElement("eon-section");
+            el._refs.content.setAttribute("type", "content");
+            el.appendChild(el._refs.content);
+          }
+          // Set up content
+          el._refs.content.classList.add("eon-panel-content");
+          var shadowDrop = document.createElement("div");
+          shadowDrop.classList.add("eon-panel-shadowDrop", "eon-boxshadow3");
+          el._refs.content.appendChild(shadowDrop);
+          // Set up header
+          el._refs.header.classList.add("eon-panel-header", "eon-sect1", "eon-fg1");
+          // Denied scroll on panel root element
+          el.classList.add("eon-panel-no-scroll");
+          // Define content container
+          if (eon.util.isTrue(el.allowScroll)) {
+            el._refs.wrapper = el._setUpScroll();
+          } else {
+            el._refs.wrapper = el._refs.content;
+          }
+          // Set public content reference
+          el.content = el._refs.content;
+        },
+        /*
+          @function (private) _setUpSimple
+          @description 
+        */
+        setUpSimple: function () {
+          var el = this;
+          // Define content container
+          if (eon.util.isTrue(el.allowScroll)) {
+            el._refs.wrapper = el._setUpScroll();
+          } else {
+            el._refs.wrapper = el;
+          }
+          // Get body container
+          el.content = eon.util.isTrue(el.allowScroll) ? el._refs.wrapper.content : el;
+        },
+        /*
+          @function (private) _setUpScroll
+          @description 
+        */
+        setUpScroll: function (hasSections) {
+          var el = this;
+          var wrapper;
+          // Get body container
+          if (eon.util.isTrue(el.allowScroll)) {
+            wrapper = document.createElement("eon-scroll");
+            // Set passed scroll parameters
+            wrapper.fill = el.scrollFill;
+            // el._refs.wrapper.arrowScrolls = el.arrowScrolls;
+            wrapper.thickness = el.thickness;
+            // el._refs.wrapper.type = el.scrollType;
+          }
+          return wrapper;
+        },
+        /*
+          @function (private) _moveContentToSection
+          @description 
+        */
+        moveContentToSection: function () {
+          var el = this;
+          if(el._refs.header && !el._refs.content.children[0]) {
+            var srcNodes = el.getSourceElements();
+            while (srcNodes.length) {
+              // Build nodes structure
+              srcNode = srcNodes.shift();
+              // Append nodes to section
+              if (!srcNode.isEqualNode(el._refs.header) 
+                  && !srcNode.isEqualNode(el._refs.content)
+                  && !srcNode.isEqualNode(el._refs.wrapper)) {
+                el._refs.content.appendChild(srcNode);
+              }
+            }
+          }
+        },
+        
+        /*
+          @function (private) _setUpHeader
+          @description Set header dimensions
+          @param {String} height [Standard header height]
+          @param {String} tall [Grown header height]
+        */
+        setUpHeader: function () {
+          var el = this;
+          // Add new header class to header element
+          // ** Use events to make sure sections creations
+          el.onReady(function(){
+            if (el._refs.header.headerHeight) {
+              // Update header height
+              el._refs.header.style.height = el._refs.header.headerHeight;
+            }
+            if (eon.util.isTrue(el._refs.header.grow)) {
+              // Update header height
+              el._refs.header.style.height = el._refs.header.headerTallHeight;
+              // Growing header
+              el._configureGrowingHeader();
+            }
+          });
+        },
+        /*
+           @function (private) _configureGrowingHeader
+           @description Create or remove scroll listener for growing header functionality
+           @param {Boolean} remove [Whether or not listener should be removed]
+         */
+        configureGrowingHeader: function (remove) {
+          var el = this;
+          // Monitor growing header for growing header type
+          var isHeaderTall = false;
+          var scrollContainer;
+          // Scroll content listener
+          if(eon.util.isTrue(el.allowScroll)) {
+            if (el._refs.wrapper.onCreated) {
+              el._refs.wrapper.onScrolled(growingHeaderListener);
+            } else {
+              el.onReady(function () {
+                el._refs.wrapper.onScrolled(growingHeaderListener);
+              });
+            }
+          } else {
+            el._refs.content.addEventListener("scroll", growingHeaderListener);
+          }
+          /**
+           * Growing header listener
+           */
+          function growingHeaderListener(obj) {
+            if (obj.trigger !== "resize") {
+              // Check native scroll container
+              scrollContainer = this.tagName == "EON-SCROLL" ? this.content : this;
+              var padding = window.getComputedStyle(el._refs.content, null)
+                .getPropertyValue("padding").split("px")[0];
+              // Check 
+              var contentHeight = el._refs.content.offsetHeight - (padding * 2);
+              var mainContentHeight = scrollContainer.scrollHeight - 50;
+              // Get scroll container scrollTop value
+              var scrollTop = this.tagName == "EON-SCROLL" ? Math.abs(obj.scrollTop) : this.scrollTop;
+  
+              if (!isHeaderTall && scrollTop > 0 && mainContentHeight > contentHeight) {
+                // Increase header height
+                el._refs.header.style.height = el._refs.header.headerHeight;
+                isHeaderTall = true;
+              } else if (scrollTop == 0) {
+                // Turn header back to its initial state
+                el._refs.header.style.height = el._refs.header.headerTallHeight;
+                isHeaderTall = false;
+              }
+            }
+          }
+        },
+        /*
+          @function (private) _importContent
           @description Set panel content local or from remote html
         */
         importContent: function () {
@@ -155,7 +339,11 @@
             el.importContent(documentFragment);
           } else if (!el.href) {
             // Extract script nodes that belong to template elements for deferring their execution
-            var nodes = el._deferScripts(el);
+            if(el._refs.header) {
+              var nodes = el._deferScripts(el._refs.content);
+            } else {
+              var nodes = el._deferScripts(el);
+            }
             el._appendContent(nodes);
             el._misc.loaded = true;
           }
@@ -172,7 +360,7 @@
           // ** IE do not support 'children' property
           if (eon.util.getBrowser() === "IE") {
             // Avoid empty element template on programmatic cases
-            nodes = !dataNode.childNodes[0] ? dataNode.template.childNodes : dataNode.childNodes;
+            nodes = !dataNode.childNodes[0] && dataNode.template ? dataNode.template.childNodes : dataNode.childNodes;
             // From node list to js array
           } else {
             // Avoid empty element template on programmatic cases
@@ -180,7 +368,6 @@
           }
           // Cast to js array 
           nodes = [].slice.call(nodes);
-  
           for (var i = 0; i < nodes.length; i++) {
             var node = nodes[i];
             // Check template node
@@ -202,7 +389,7 @@
           return nodes;
         },
         /*
-          @function (private) appendContent
+          @function (private) _appendContent
           @description Append content to the panel or the scroll container if exists 
           @param {Object} nodes [Node element containing the panel content]
         */
@@ -228,9 +415,16 @@
               }
             }
           }
-          // Move templates to the assigned body container 
+          // Move templates to the assigned content container 
           if (reAppend) {
-            el.content.appendChild(fragment);
+            if(el._refs.header) {
+              // Append content nodes to the scroll container 
+              el._refs.wrapper.content.appendChild(fragment);
+              // Append scroll to the content section 
+              el.content.appendChild(el._refs.wrapper);
+            } else {
+              el.content.appendChild(fragment);
+            }
           }
           // Wait until the element is ready
           el.onReady(function () {
@@ -258,7 +452,7 @@
               // Inject deferred script text from stored ones
               positionId = child.getAttribute("_positionId");
               child.text = positionId ? el._refs.scripts[positionId] : child.text;
-            } else if(childScripts[0]) {
+            } else if (childScripts[0]) {
               for (var i = 0; i < childScripts.length; i++) {
                 scrpt = childScripts[i];
                 // Inject deferred script text from stored ones
@@ -272,18 +466,6 @@
           el.content.insertBefore(fragment, tmp);
           // Remove empty template
           el.content.removeChild(tmp);
-        },
-        /*
-          @function (private) _setUpScroll
-          @description Set scroll configuration parameters
-        */
-        setUpScroll: function () {
-          var el = this;
-          // Set passed scroll parameters
-          el._refs.wrapper.fill = el.fill;
-          el._refs.wrapper.arrowScrolls = el.arrowScrolls;
-          el._refs.wrapper.thickness = el.thickness;
-          el._refs.wrapper.type = el.scrollType;
         },
         /*
           @function (private) _resetCallback
@@ -352,7 +534,6 @@
             // Execute request
             xhr.send();
           }
-  
         },
         /*
           @function refresh
@@ -371,33 +552,38 @@
         // Create content related callbacks
         eon.createCallback("onLoad", this, "ready");
         eon.createCallback("onContent", this);
+        // Set up panel content structure
+        el._setUpContent();
       },
       onInit: function () {
         var el = this;
         el._refs.templates = {};
         el._refs.scripts = {};
         el._misc = {};
-        // Get body container
-        if (eon.util.isTrue(el.allowScroll)) {
-          el._refs.wrapper = document.createElement("eon-scroll");
-          // Configure scroll
-          el._setUpScroll();
-        } else {
-          el._refs.wrapper = el;
-        }
-        // Get body container
-        el.content = eon.util.isTrue(el.allowScroll) ? el._refs.wrapper.content : el;
-        // Check the default style configuration
+        // Make sure the content is located inside de content section
+        el._moveContentToSection();
+        
       },
       onTransformed: function () {
         var el = this;
         // Import panel content from specific source
         el._importContent();
-        // Append content wrapper if the element is not the root
-        if (!el._refs.wrapper.isEqualNode(el)) { el.appendChild(el._refs.wrapper) }
+        // Append the scrollable content wrapper to the content section
+        if(el._refs.header) {
+          if (!el._refs.wrapper.isEqualNode(el._refs.content)) {
+            el.appendChild(el._refs.content);
+          }
+        } else {
+          if (!el._refs.wrapper.isEqualNode(el)) { 
+            el.appendChild(el._refs.wrapper);
+          }
+        }
         // ** Apply default items positioning style
         el._setDefaultStyle();
-        
+        // Set header dimensions
+        if (el._refs.header) {
+          el._setUpHeader();
+        }
       },
       onPropertyChanged: function (attrName, oldVal, newVal) {
         var el = this;

@@ -7881,6 +7881,21 @@ eon.appendElementTemplate = function (el) {
     delete el.template;
 };
 
+eon.generateElementReferences = function (el) {
+    
+    var nodes = el.template.querySelectorAll("[eon-ref]");
+    var node;
+
+    el._ref = el._ref || {};
+
+    for (var i = 0; i < nodes.length; i++) {
+        node = nodes[i];
+        el._ref[node.getAttribute("eon-ref")] = node;
+        node.removeAttribute("eon-ref");
+    }
+
+};
+
 eon.initSourceCallbacks = function (el) {
     // Creates the getSourceElements function even if it has no source elements
     el.getSourceNodes = function () {
@@ -8075,6 +8090,9 @@ eon.declare = function (name, baseElement) {
 
             // Generates an instance of the element template and assigns it as a property of the element so we can easily access from anywhere
             eon.generateElementTemplate(el);
+
+            // Searches elements tagged to have its reference saved inside the component template 
+            eon.generateElementReferences(el);
 
             // Sets a css rule with the provided display by the config, if no display is provided it will have display block by default
             eon.initializeDisplay(el, config);

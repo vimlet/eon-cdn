@@ -5935,24 +5935,33 @@ eon.imports.paths = eon.imports.paths || {};
 eon.imports.config = eon.imports.config || {};
 eon.imports.errors = eon.imports.errors || {};
 
-// Imports the requested custom element file, admits arrays and strings
+/*
+@function import
+@description Imports the requested custom element file, admits arrays and strings
+@param {Object} param
+*/
 eon.import = function (param) {
 
     if (param.constructor === Array) {
 
         for (var i = 0; i < param.length; i++) {
-            eon.insertImport(param[i]);
+            eon.requestImport(param[i]);
         }
 
     } else if (param.constructor === String) {
 
-        eon.insertImport(param);
+        eon.requestImport(param);
 
     }
 
 };
 
-eon.insertImport = function (href) {
+/*
+@function requestImport
+@description Takes the component name and path, then declares the component and requests the .html file with ajax
+@param {Object} href
+*/
+eon.requestImport = function (href) {
 
     var elementName;
 
@@ -5962,6 +5971,10 @@ eon.insertImport = function (href) {
     href = href.charAt(0) == "@" ? eon.getBasePathUrl(href) : href;
 
     if (!(elementName in eon.imports.templates)) {
+
+        // Everytime a new import is requested we reset the onReady and onImportsReady triggered state
+        eon.__onImportsReady__triggered = false;
+        eon.__onReady__triggered = false;
 
         // Increment total
         eon.imports.total++;
@@ -5984,7 +5997,7 @@ eon.insertImport = function (href) {
 
                 if (obj.xhr.status == 200) {
 
-                    eon.insertFragment(elementName, obj.responseText);
+                    eon.prepareComponent(elementName, obj.responseText);
 
                 } else {
 
@@ -6008,8 +6021,14 @@ eon.insertImport = function (href) {
 
 };
 
-eon.insertFragment = function (elementName, content) {
-    
+/*
+@function prepareComponent
+@description Creates a fragment from the responseText and stores the scripts, links and template to append them when the DOM is ready
+@param {Object} elementName
+@param {String} content
+*/
+eon.prepareComponent = function (elementName, content) {
+
     var importFragment = eon.fragmentFromString(content);
 
     var i;
@@ -6065,7 +6084,7 @@ eon.insertFragment = function (elementName, content) {
     eon.domReady(function () {
 
         eon.imports.count++;
-        
+
         if (!eon.imports.ready && eon.imports.count == eon.imports.total) {
 
             // Appends all elements combined style
@@ -6091,6 +6110,10 @@ eon.insertFragment = function (elementName, content) {
                     eon.importSchemaThemes();
 
                     eon.triggerCallback('onImportsReady', eon);
+                    // Once the imports are done, if all the registered elements are ready then it we trigger the onReady callback
+                    if (eon.registry.registeredElements == eon.registry.elementStatus.ready.length) {
+                        eon.triggerCallback("onReady", eon);
+                    }
 
                 } else {
                     eon.__onScriptsReady__triggered = false;
@@ -6103,6 +6126,10 @@ eon.insertFragment = function (elementName, content) {
     });
 };
 
+/*
+@function handleDependencies
+@description Loops through the stored configs to search for independencies and it also parses the component template
+*/
 eon.handleDependencies = function () {
 
     // Automated dependencies and interpolation
@@ -6121,7 +6148,7 @@ eon.handleDependencies = function () {
         }
 
         // Handle interpolation
-        eon.handleTemplateInterpolation(elementNames[i]);
+        eon.parseTemplate(elementNames[i]);
     }
 
     return hasPendingImports;
@@ -6129,14 +6156,22 @@ eon.handleDependencies = function () {
 };
 
 
-// Handle template interpolation
-eon.handleTemplateInterpolation = function (name) {
+/*
+@function parseTemplate
+@description Parses the component template
+@param {String} name
+*/
+eon.parseTemplate = function (name) {
     if (eon.imports.config[name].parse) {
         eon.interpolation.prepare(eon.imports.templates[name]);
     }
 };
 
-// Imports specific componentes themes if specified
+
+/*
+@function importSchemaThemes
+@description Takes eon's themaSchema and reads it to import the requested specific themes
+*/
 eon.importSchemaThemes = function () {
 
     if (eon.themeSchema) {
@@ -6177,6 +6212,11 @@ eon.importSchemaThemes = function () {
 
 };
 
+/*
+@function importMainTheme
+@description Imports the main css file of the specified theme
+@param {String} theme
+*/
 eon.importMainTheme = function (theme) {
 
     if (theme && !eon.registry.isThemeRegistered("main", theme)) {
@@ -6201,6 +6241,13 @@ eon.importMainTheme = function (theme) {
 
 };
 
+/*
+@function importElementTheme
+@description Imports the component css file of the specified theme
+@param {Object} config
+@param {String} name
+@param {String} theme
+*/
 eon.importElementTheme = function (config, name, theme) {
 
     if (theme && config.themed && !eon.registry.isThemeRegistered(name, theme)) {
@@ -6224,13 +6271,16 @@ eon.importElementTheme = function (config, name, theme) {
     }
 };
 
+/*
+@function handleStyleAppend
+@description Takes the style made of all the components style and appends it to the document
+*/
 eon.handleStyleAppend = function () {
 
     if (eon.imports.style != "") {
 
         var combinedStyle = document.createElement("style");
 
-        combinedStyle.setAttribute("data-eon", "element-styles")
         combinedStyle.innerHTML = eon.imports.style;
 
         // Resets style to avoid css rules style replication
@@ -6242,6 +6292,13 @@ eon.handleStyleAppend = function () {
 
 };
 
+/*
+@function handleScriptsAppend
+@description Appends the components scripts, since this is a recursive function and it may stop to 
+continue in another moment it uses its both paremeters to continue where it stopped
+@param {Number} elementIndex
+@param {Number} scriptIndex
+*/
 eon.handleScriptsAppend = function (elementIndex, scriptIndex) {
 
     var elementNames = Object.keys(eon.imports.scripts);
@@ -6304,6 +6361,10 @@ eon.handleScriptsAppend = function (elementIndex, scriptIndex) {
 
 };
 
+/*
+@function removeScriptsReadyScripts
+@description Removes all the scripts from the head that are no longer needed
+*/
 eon.removeScriptsReadyScripts = function () {
     var el = this;
     var scriptReadyScripts = document.head.querySelectorAll("script[scriptsready-script]");
@@ -6313,6 +6374,10 @@ eon.removeScriptsReadyScripts = function () {
     }
 };
 
+/*
+@function handleLinksAppend
+@description Appends the components links
+*/
 eon.handleLinksAppend = function () {
 
     var elementNames = Object.keys(eon.imports.links);
@@ -6342,7 +6407,12 @@ eon.handleLinksAppend = function () {
 
 };
 
-// Handle config dependencies
+/*
+@function {Boolean} handleConfigDependencies
+@description Checks the dependencies for a given component config. If there are dependencies to import  path and requests an 
+import, it will also return a Boolean representing whether it has dependencies or not
+@param {String} name
+*/
 eon.handleConfigDependencies = function (name) {
     var hasDependencies = false;
     var elementConfig = eon.imports.config[name];
@@ -6366,8 +6436,13 @@ eon.handleConfigDependencies = function (name) {
     return hasDependencies;
 }
 
+/*
+@function {String} getBasePathUrl
+@description Returns a new url created with the base path
+@param {String} url
+*/
 eon.getBasePathUrl = function (url) {
-    
+
     url = url.substring(1);
     return eon.basePath + "/" + url;
 }
@@ -6389,7 +6464,6 @@ eon.registry.readyQueue = [];
 eon.registry.transformedQueueBreak = true;
 
 eon.registry.elementThemes = {};
-eon.registry.elementTemplates = {};
 eon.registry.elementCounters = {};
 eon.registry.elementRegistry = {};
 
@@ -6409,7 +6483,11 @@ eon.registry.elementStatus = {
 // Register eon ready callback
 eon.createCallback("onReady", eon, "ready");
 
-// Register element
+/*
+@function {String} registerElement
+@description Register the element, gives it an uid and registers its status to created
+@param {Object} el
+*/
 eon.registry.registerElement = function (el) {
   var name = el.tagName.toLowerCase();
   var uid = el.uid ? el.uid : el.getAttribute("uid");
@@ -6454,10 +6532,22 @@ eon.registry.registerElement = function (el) {
   return uidFull;
 };
 
+/*
+@function triggerTransformed
+@description Triggers the transform callback for the component of the given index
+@param {Number} index
+*/
 eon.registry.triggerTransformed = function (index) {
   eon.registry.transformedQueue[index].fn.apply(eon.registry.transformedQueue[index].el);
 };
 
+/*
+@function addToTransformedQueue
+@description Adds the component to the transform queue, appending its triggerTransformed call into the DOM with a script tag
+@param {Object} el
+@param {Object} elementDoc
+@param {Function} fn
+*/
 eon.registry.addToTransformedQueue = function (el, elementDoc, fn) {
   var script = document.createElement("script");
   var index;
@@ -6479,6 +6569,12 @@ eon.registry.addToTransformedQueue = function (el, elementDoc, fn) {
   elementDoc.querySelector("head").appendChild(script);
 };
 
+/*
+@function addToRenderQueue
+@description Adds the component to the render queue
+@param {Object} el
+@param {Function} fn
+*/
 eon.registry.addToRenderQueue = function (el, fn) {
   eon.registry.renderQueue.push({
     el: el,
@@ -6486,6 +6582,12 @@ eon.registry.addToRenderQueue = function (el, fn) {
   });
 };
 
+/*
+@function addToBubbleRenderQueue
+@description Adds the component to the bubble render queue
+@param {Object} el
+@param {Function} fn
+*/
 eon.registry.addToBubbleRenderQueue = function (el, fn) {
   eon.registry.bubbleRenderQueue.push({
     el: el,
@@ -6493,6 +6595,12 @@ eon.registry.addToBubbleRenderQueue = function (el, fn) {
   });
 };
 
+/*
+@function addToReadyQueue
+@description Adds the component to the ready queue
+@param {Object} el
+@param {Function} fn
+*/
 eon.registry.addToReadyQueue = function (el, fn) {
   eon.registry.readyQueue.push({
     el: el,
@@ -6500,6 +6608,10 @@ eon.registry.addToReadyQueue = function (el, fn) {
   });
 };
 
+/*
+@function triggerRenders
+@description Attempts to trigger all the render callbacks for all the components if all of them are transformed
+*/
 eon.registry.triggerRenders = function () {
 
   if (eon.registry.registeredElements == eon.registry.elementStatus.transformed.length) {
@@ -6519,6 +6631,10 @@ eon.registry.triggerRenders = function () {
 
 };
 
+/*
+@function triggerRenderCallbacks
+@description Triggers the render callbacks from the render queue
+*/
 eon.registry.triggerRenderCallbacks = function () {
   // Clone queue and clear
   var auxQueue = eon.registry.renderQueue.slice();
@@ -6530,6 +6646,10 @@ eon.registry.triggerRenderCallbacks = function () {
   }
 };
 
+/*
+@function triggerBubbleRenderCallbacks
+@description Triggers the bubble render callbacks from the bubble render queue
+*/
 eon.registry.triggerBubbleRenderCallbacks = function () {
   // Clone queue and clear
   var auxQueue = eon.registry.bubbleRenderQueue.slice();
@@ -6541,6 +6661,10 @@ eon.registry.triggerBubbleRenderCallbacks = function () {
   }
 };
 
+/*
+@function triggerReadyCallbacks
+@description Triggers the ready callbacks from the ready queue
+*/
 eon.registry.triggerReadyCallbacks = function () {
   // Clone queue and clear
   var auxQueue = eon.registry.readyQueue.slice();
@@ -6552,6 +6676,12 @@ eon.registry.triggerReadyCallbacks = function () {
   }
 };
 
+/*
+@function registerTheme
+@description Registers the specified theme
+@param {String} tagName
+@param {String} theme
+*/
 eon.registry.registerTheme = function (tagName, theme) {
   if (!eon.registry.elementThemes[theme]) {
     eon.registry.elementThemes[theme] = {};
@@ -6560,24 +6690,23 @@ eon.registry.registerTheme = function (tagName, theme) {
   eon.registry.elementThemes[theme][tagName] = true;
 };
 
+/*
+@function {Boolean} isThemeRegistered
+@description Checks if the provided theme has already been registered
+@param {String} tagName
+@param {String} theme
+*/
 eon.registry.isThemeRegistered = function (tagName, theme) {
   return !eon.registry.elementThemes[theme]
     ? false
     : eon.registry.elementThemes[theme][tagName];
 };
 
-eon.registry.registerTemplate = function (tagName, template) {
-  if (!eon.registry.elementTemplates[tagName]) {
-    eon.registry.elementTemplates[tagName] = {};
-  }
-
-  eon.registry.elementTemplates[tagName] = template;
-};
-
-eon.registry.isTemplateRegistered = function (tagName) {
-  return !eon.registry.elementTemplates[tagName] ? false : true;
-};
-
+/*
+@function {String} getUidFull
+@description Returns the full UID for the provided component
+@param {Object} el
+*/
 eon.registry.getUidFull = function (el) {
   var uid = el.uid ? el.uid : el.getAttribute("uid");
   var fullUid;
@@ -6589,6 +6718,12 @@ eon.registry.getUidFull = function (el) {
   return fullUid;
 };
 
+/*
+@function updateElementStatus
+@description Registers a new status for the given component
+@param {Object} el
+@param {String} status
+*/
 eon.registry.updateElementStatus = function (el, status) {
 
   if (status != "parsed") {
@@ -6617,6 +6752,11 @@ eon.registry.updateElementStatus = function (el, status) {
 
 };
 
+/*
+@function isAttached
+@description Whether the component is attached or not
+@param {Object} el
+*/
 eon.registry.isAttached = function (el) {
   return (
     eon.registry.elementRegistry[eon.registry.getUidFull(el)] &&
@@ -6624,6 +6764,11 @@ eon.registry.isAttached = function (el) {
   );
 };
 
+/*
+@function isImported
+@description Whether the component is imported or not
+@param {Object} el
+*/
 eon.registry.isImported = function (el) {
   return (
     eon.registry.elementRegistry[eon.registry.getUidFull(el)] &&
@@ -6631,6 +6776,11 @@ eon.registry.isImported = function (el) {
   );
 };
 
+/*
+@function isTransformed
+@description Whether the component is transformed or not
+@param {Object} el
+*/
 eon.registry.isTransformed = function (el) {
   return (
     eon.registry.elementRegistry[eon.registry.getUidFull(el)] &&
@@ -6638,6 +6788,11 @@ eon.registry.isTransformed = function (el) {
   );
 };
 
+/*
+@function isRendered
+@description Whether the component is rendered or not
+@param {Object} el
+*/
 eon.registry.isRendered = function (el) {
   return (
     eon.registry.elementRegistry[eon.registry.getUidFull(el)] &&
@@ -6645,6 +6800,11 @@ eon.registry.isRendered = function (el) {
   );
 };
 
+/*
+@function isBubbleRendered
+@description Whether the component is bubble rendered or not
+@param {Object} el
+*/
 eon.registry.isBubbleRendered = function (el) {
   return (
     eon.registry.elementRegistry[eon.registry.getUidFull(el)] &&
@@ -6652,6 +6812,11 @@ eon.registry.isBubbleRendered = function (el) {
   );
 };
 
+/*
+@function isReady
+@description Whether the component is ready or not
+@param {Object} el
+*/
 eon.registry.isReady = function (el) {
   return (
     eon.registry.elementRegistry[eon.registry.getUidFull(el)] &&
@@ -6676,7 +6841,11 @@ eon.interpolation.globalScope = eon.interpolation.globalScope || eon;
 eon.interpolation.globalScope.data = eon.interpolation.globalScope.data || {};
 eon.interpolation.globalScope.locale = eon.interpolation.globalScope.locale || {};
 
-// Replaces all the echo/script for its corresponding elements and prepares them
+/*
+@function prepare
+@description Replaces all the echo/script for its corresponding elements and prepares them
+@param {Object} template
+*/
 eon.interpolation.prepare = function (template) {
 
   // Extend vimlet.meta
@@ -6735,7 +6904,12 @@ eon.interpolation.prepare = function (template) {
   return template;
 };
 
-// Handles all the initial state of the data and variable elements
+/*
+@function init
+@description Handles all the initial state of the data and variable elements
+@param {Object} el
+@param {Object} config
+*/
 eon.interpolation.init = function (el, config) {
 
   var sources = {};
@@ -6834,8 +7008,12 @@ eon.interpolation.init = function (el, config) {
 
 };
 
-// Creates the descriptor for the data object itself and for all its properties
-// eon.interpolation.setupDataPropDescriptors = function (el, config) {
+/*
+@function setupDataPropDescriptors
+@description Creates the descriptor for the data object itself and for all its properties
+@param {Object} source
+@param {String} sourceName
+*/
 eon.interpolation.setupDataPropDescriptors = function (source, sourceName) {
 
   var scope = source.scope;
@@ -6851,7 +7029,15 @@ eon.interpolation.setupDataPropDescriptors = function (source, sourceName) {
   eon.interpolation.createObjectPropDescriptors(scope, scope[sourceName], sourceName);
 }
 
-// Simple property descriptor creation that in case its changed it will trigger our internal callback
+/*
+@function {Object} createPropDescriptor
+@description Simple property descriptor creation that in case its changed it will trigger our internal callback
+@param {Object} scope
+@param {Object} keyOwnerObj
+@param {String} key
+@param {String} keyPath
+@param {Value} value
+*/
 eon.interpolation.createPropDescriptor = function (scope, keyOwnerObj, key, keyPath, value) {
   var propDescriptor = {};
 
@@ -6874,7 +7060,13 @@ eon.interpolation.createPropDescriptor = function (scope, keyOwnerObj, key, keyP
   return propDescriptor;
 }
 
-// When the property we want to observer is an object we create its descriptor and ones for its properties
+/*
+@function createObjectPropDescriptors
+@description When the property we want to observer is an object we create its descriptor and ones for its properties
+@param {Object} el
+@param {Object} obj
+@param {String} keyPath
+*/
 eon.interpolation.createObjectPropDescriptors = function (el, obj, keyPath) {
   var value;
 
@@ -6902,7 +7094,13 @@ eon.interpolation.createObjectPropDescriptors = function (el, obj, keyPath) {
   }
 }
 
-// Creates the private onDataChanged callback to handle the public one
+/*
+@function setupDataChangeCallback
+@description Creates the private onDataChanged callback to handle the public one
+@param {Object} el
+@param {Object} source
+@param {Object} config
+*/
 eon.interpolation.setupDataChangeCallback = function (el, source, config) {
   var scope = source.scope;
 
@@ -6926,7 +7124,15 @@ eon.interpolation.setupDataChangeCallback = function (el, source, config) {
 
 }
 
-// Takes all the properties from data, finds its variable and sets its value
+/*
+@function interpolate
+@description Takes all the properties from data, finds its variable and sets its value
+@param {Object} el
+@param {Object} source
+@param {Object} obj
+@param {Object} interpolations
+@param {String} bind
+*/
 eon.interpolation.interpolate = function (el, source, obj, interpolations, bind) {
   var key, i, variableBind, variable;
 
@@ -6964,7 +7170,16 @@ eon.interpolation.interpolate = function (el, source, obj, interpolations, bind)
   }
 }
 
-// Handles the situation when a whole object has been changed
+/*
+@function handleObjectChange
+@description Handles the situation when a whole object has been changed
+@param {Object} el
+@param {Object} scope
+@param {String} keyPath
+@param {Object} oldData
+@param {Object} newData
+@param {Object} config
+*/
 eon.interpolation.handleObjectChange = function (el, scope, keyPath, oldData, newData, config) {
   var checked = {};
 
@@ -7001,7 +7216,17 @@ eon.interpolation.handleVariableChange = function (el, scope, keyPath, oldVal, n
   eon.triggerAllCallbackEvents(scope, config ? config : {}, "onDataChanged", [interpolationPath, oldVal, newVal]);
 }
 
-// Compares the old data with the new one and triggers the changes
+/*
+@function handleObjectChange
+@description Compares the old data with the new one and triggers the changes
+@param {Object} el
+@param {Object} scope
+@param {String} keyPath
+@param {Object} oldData
+@param {Object} newData
+@param {Object} checked
+@param {Object} config
+*/
 eon.interpolation.backwardDataDiffing = function (el, scope, keyPath, oldData, newData, checked, config) {
   var newVal;
   // Loops through the oldData
@@ -7027,7 +7252,16 @@ eon.interpolation.backwardDataDiffing = function (el, scope, keyPath, oldData, n
   return checked;
 }
 
-// Compares the data with the already checked object
+/*
+@function handleObjectChange
+@description Compares the data with the already checked object
+@param {Object} el
+@param {Object} scope
+@param {String} keyPath
+@param {Object} data
+@param {Object} checked
+@param {Object} config
+*/
 eon.interpolation.forwardDataDiffing = function (el, scope, keyPath, data, checked, config) {
   var oldVal;
   // Loops through data
@@ -7101,6 +7335,11 @@ document.addEventListener("DOMContentLoaded", function (event) {
   
   }); 
 
+/*
+@function  declare
+@description Creates the element class
+@param {Object} baseElement
+*/
 eon.constructClass = function (baseElement) {
   // Class adpater
   var classAdapter = function () {
@@ -7153,22 +7392,29 @@ eon.constructClass = function (baseElement) {
       newVal
     ]);
   };
-  // TODO future callback implementation
-  // classAdapter.prototype.adoptedCallback = function() {
-  //
-  // };
   return classAdapter;
 };
-
+/*
+@function  element
+@description This function comes with the element script, it handles the element style insertion and saves the config,
+it accepts two parameters to accept a wider variety of calls
+@param {Object} param1
+@param {Object} param2
+*/
 eon.element = function (param1, param2) {
 
     var config, stylePath, name;
 
+    // If a second parameter is provided then we check if its an object with the config inside, or 
+    // it is the config itself, if its none then we assign an empty object as the config,
+    // in this case the first parameter will always be the component name
     if (param2) {
 
         config = param2.config ? param2.config : param2.constructor === Object ? param2 : {};
         name = param1;
 
+        // If no second paremeter is provided then the first parameter may either be an object with the name and config inside 
+        // or be the config itself with the name as one of its keys
     } else {
 
         config = param1.config ? param1.config : param1.constructor === Object ? param1 : {};
@@ -7201,12 +7447,23 @@ eon.element = function (param1, param2) {
 
 };
 
+/*
+@function {Object} define
+@description Wrapper function of the define function
+@param {Object} config
+*/
 eon.define = function (config) {
     eon.amd.define(function () {
         return config;
     });
 };
 
+/*
+@function {Object} createElement
+@description Allows the user to create custom elements directly providing a config object to add aditional functions, properties and callbacks
+@param {String} name
+@param {Object} config
+*/
 eon.createElement = function (name, config) {
 
     var el = document.createElement(name);
@@ -7247,15 +7504,31 @@ eon.createElement = function (name, config) {
 
 };
 
+/*
+@function  hideElement
+@description Assigns the class to the element to hide it
+@param {Object} el
+*/
 eon.hideElement = function (el) {
     el.classList.add("eon-until-rendered");
 };
 
+/*
+@function  unhideElement
+@description Removes the class to the element to make it visible
+@param {Object} el
+*/
 eon.unhideElement = function (el) {
     el.classList.remove("eon-until-rendered");
 };
 
+/*
+@function  declareCallbacks
+@description Creates all the callbacks that the element may trigger through its life cycle
+@param {Object} el
+*/
 eon.declareCallbacks = function (el) {
+
     // Creates the callback needed for the element
     eon.createCallback("onCreated", el, "ready");
     eon.createCallback("onInit", el, "ready");
@@ -7266,14 +7539,25 @@ eon.declareCallbacks = function (el) {
     eon.createCallback("onPropertyChanged", el);
     eon.createCallback("onAttributeChanged", el);
     eon.createCallback("onDataChanged", el);
+
+    eon.createResizeCallbacks(el);
+
 };
 
+/*
+@function  generateSourceFragment
+@description Creates the source fragment and moves all the child elements into it
+@param {Object} el
+*/
 eon.generateSourceFragment = function (el) {
 
     el.source = document.createDocumentFragment();
 
+    // If there are no childs, its means whether that it doesnt and wont have childs, or that it has not been processed by the browser yet,
+    // either way we create a mutation observer to listen to child node changes, this observer will be disconnected on the "onAttached" callback.
+    // Else just loops through its nodes and append them to the source fragment
     if (el.childNodes.length == 0) {
-        // Chrome only
+
         var observer = new MutationObserver(function (mutations) {
 
             mutations.forEach(function (mutation) {
@@ -7306,6 +7590,12 @@ eon.generateSourceFragment = function (el) {
 
 };
 
+/*
+@function  prepareElement
+@description Recieves a callback for the element creation process and waits until all the imports are ready to trigger it
+@param {Object} el
+@param {Function} callback
+*/
 eon.prepareElement = function (el, callback) {
 
     // Mark element as first attach
@@ -7318,6 +7608,12 @@ eon.prepareElement = function (el, callback) {
 
 };
 
+/*
+@function  parse
+@description Assigns all the properties, attributes and some usefull functions to the element
+@param {Object} el
+@param {Object} config
+*/
 eon.parse = function (el, config) {
     // Creates object properties for the element with data about the properties/attributes to be observed
     eon.collectObserveData(el, config);
@@ -7328,11 +7624,13 @@ eon.parse = function (el, config) {
     eon.importPublic(el, config);
     eon.importPrivate(el, config);
 
+    // Defines usefull functions for the component
     eon.definePath(el);
     eon.defineParentComponent(el);
     eon.defineOverlayCreation(el);
     eon.definePlaceholderCreation(el);
 
+    // Creates a proxy so that when the user changes the attribute it will take care of the callbacks
     eon.createAttributesObserver(el, config);
 
     eon.triggerAllCallbackEvents(el, config, "onParsed");
@@ -7340,10 +7638,20 @@ eon.parse = function (el, config) {
 
 };
 
+/*
+@function  definePath
+@description Assigns the importPath property to the component
+@param {Object} el
+*/
 eon.definePath = function (el) {
     el.importPath = eon.imports.paths[el.nodeName.toLowerCase()];
 };
 
+/*
+@function  defineParentComponent
+@description Assigns the parentComponent property that will provide the nearest enclosing eon component
+@param {Object} el
+*/
 eon.defineParentComponent = function (el) {
 
     var propDescriptor = {};
@@ -7359,6 +7667,11 @@ eon.defineParentComponent = function (el) {
 
 };
 
+/*
+@function  defineOverlayCreation
+@description Provides the component with a function that will allow an overlay creation
+@param {Object} el
+*/
 eon.defineOverlayCreation = function (el) {
 
     // Defines the function for the element
@@ -7388,6 +7701,12 @@ eon.defineOverlayCreation = function (el) {
     };
 
 };
+
+/*
+@function  definePlaceholderCreation
+@description Provides the component with a function that will allow an overlay creation
+@param {Object} el
+*/
 eon.definePlaceholderCreation = function (el) {
 
     // Defines the function for the element
@@ -7412,15 +7731,17 @@ eon.definePlaceholderCreation = function (el) {
 
 };
 
+/*
+@function  collectObserveData
+@description Loops through the private and public properties to save the ones that will be observed/reflected in their corresponding arrays
+@param {Object} el
+@param {Object} config
+*/
 eon.collectObserveData = function (el, config) {
 
     el.__observeProperties = {};
     el.__observeAttributes = {};
     el.__reflectProperties = {};
-
-    // Assigns each index of the array to the object
-    eon.addObserveFromArray(el.__observeProperties, config.observeProperties);
-    eon.addObserveFromArray(el.__observeAttributes, config.observeAttributes);
 
     // Reads properties object to add them to the observe object if needed
     if (config.properties) {
@@ -7472,16 +7793,12 @@ eon.collectObserveData = function (el, config) {
 
 };
 
-eon.addObserveFromArray = function (observeObj, observeArray) {
-
-    observeArray = observeArray ? observeArray : [];
-
-    for (var i = 0; i < observeArray.length; i++) {
-        observeObj[observeArray[i]] = true;
-    }
-
-};
-
+/*
+@function  createAttributesObserver
+@description Takes the attributes that will be observed and creates a proxy for the setAttribute function to listen to their changes
+@param {Object} el
+@param {Object} config
+*/
 eon.createAttributesObserver = function (el, config) {
 
     var observeAttributesKeys = Object.keys(el.__observeAttributes);
@@ -7544,6 +7861,14 @@ eon.createAttributesObserver = function (el, config) {
 
 };
 
+/*
+@function  handleReflectDefaultProperty
+@description For the default reflected properties, the element waits until the onInit callback to set the corresponding attribute, 
+both attribute and property keys are provided since they can be different when having camel/hyphen cases
+@param {Object} el
+@param {String} key [Attribute key]
+@param {String} property [Property key]
+*/
 eon.handleReflectDefaultProperty = function (el, key, property) {
 
     var value = el.hasOwnProperty("__" + property) ? el["__" + property] : "";
@@ -7562,6 +7887,15 @@ eon.handleReflectDefaultProperty = function (el, key, property) {
 
 }
 
+/*
+@function handleProperty
+@description Creates properties descriptors for all the properties to be observed or reflected
+@param {Object} el
+@param {Object} config
+@param {Array} reflectProperties
+@param {Array} observeProperties
+@param {String} property
+*/
 eon.handleProperty = function (el, config, reflectProperties, observeProperties, property) {
 
     var key = property.key;
@@ -7593,6 +7927,15 @@ eon.handleProperty = function (el, config, reflectProperties, observeProperties,
     }
 };
 
+/*
+@function createPropDescriptor
+@description Creates properties descriptors for all the properties to be observed or reflected
+@param {Object} el
+@param {Object} config
+@param {String} key
+@param {Value} value
+@param {String} property
+*/
 eon.createPropDescriptor = function (el, config, key, value, reflect) {
     var propDescriptor = {};
     // Redirect get and set to __key
@@ -7626,6 +7969,12 @@ eon.createPropDescriptor = function (el, config, key, value, reflect) {
     return propDescriptor;
 };
 
+/*
+@function importData
+@description Assigns the data provided by the config to the component
+@param {Object} el
+@param {Object} config
+*/
 eon.importData = function (el, config) {
 
     el.data = {};
@@ -7636,6 +7985,13 @@ eon.importData = function (el, config) {
 
 }
 
+
+/*
+@function importLocale
+@description Assigns the locale provided by the config to the component
+@param {Object} el
+@param {Object} config
+*/
 eon.importLocale = function (el, config) {
 
     el.locale = {};
@@ -7646,6 +8002,12 @@ eon.importLocale = function (el, config) {
 
 }
 
+/*
+@function importPublic
+@description Takes all the public functions/properties and assigns them to the component
+@param {Object} el
+@param {Object} config
+*/
 eon.importPublic = function (el, config) {
 
     if (config.properties) {
@@ -7672,6 +8034,12 @@ eon.importPublic = function (el, config) {
 
 };
 
+/*
+@function importPrivate
+@description Takes all the private functions/properties and assigns them to the component
+@param {Object} el
+@param {Object} config
+*/
 eon.importPrivate = function (el, config) {
 
     if (config.privateProperties) {
@@ -7695,6 +8063,11 @@ eon.importPrivate = function (el, config) {
 
 };
 
+/*
+@function  importTemplateClasses
+@description If classes are specified in the element template, these are moved into the actual element
+@param {Object} el
+*/
 eon.importTemplateClasses = function (el) {
 
     var template = eon.imports.templates[el.tagName.toLowerCase()];
@@ -7713,6 +8086,14 @@ eon.importTemplateClasses = function (el) {
 
 };
 
+/*
+@function triggerAllCallbackEvents
+@description Triggers all the functions for the callback, including the one provided by the config
+@param {Object} el
+@param {Object} config
+@param {String} callback
+@param {Array} params
+*/
 eon.triggerAllCallbackEvents = function (el, config, callback, params) {
 
     eon.debug.log("triggerAllCallbackEvents", callback);
@@ -7732,6 +8113,12 @@ eon.triggerAllCallbackEvents = function (el, config, callback, params) {
 
 };
 
+/*
+@function transform
+@description Appends the element template, imports the needed themes for the component and creates the eon.theme change listener
+@param {Object} el
+@param {Object} config
+*/
 eon.transform = function (el, config) {
 
     if (!eon.registry.isTransformed(el)) {
@@ -7755,7 +8142,7 @@ eon.transform = function (el, config) {
 
         // Adds the element to the transformQueue
         if (eon.registry.transformedQueueBreak) {
-            
+
             eon.registry.transformedQueueBreak = false;
 
             setTimeout(function () {
@@ -7772,10 +8159,18 @@ eon.transform = function (el, config) {
 
 };
 
+/*
+@function initElementTheme
+@description Sets a theme to the component if non was specified
+@param {Object} el
+@param {Object} config
+*/
 eon.initElementTheme = function (el, config) {
 
     var theme = eon.theme;
 
+    // This will allows us to know when the component theme is given manually by the user,
+    // this will also help not to change the theme on eon.theme change
     el.__specificTheme = el.hasAttribute("theme") || el.theme ? true : false;
 
     theme = document.body.dataset.theme ? document.body.dataset.theme : theme;
@@ -7793,6 +8188,12 @@ eon.initElementTheme = function (el, config) {
     return theme;
 }
 
+/*
+@function setupEonThemeListener
+@description Creates a callback to get fired when eon theme changes
+@param {Object} el
+@param {Object} config
+*/
 eon.setupEonThemeListener = function (el, config) {
 
     // When eon theme changes it also changes the element's theme attribute and 
@@ -7818,6 +8219,11 @@ eon.setupEonThemeListener = function (el, config) {
 
 }
 
+/*
+@function slot
+@description Takes the source nodes with the "slot" attribute and moves them into the target template element
+@param {Object} el
+*/
 eon.slot = function (el) {
 
     var sourceNodes = el.getSourceNodes();
@@ -7875,7 +8281,13 @@ eon.slot = function (el) {
 
 };
 
+/*
+@function {Object} fragmentFromString
+@description Takes a string and returns a fragment with the string being part as its DOM
+@param {Object} string
+*/
 eon.fragmentFromString = function (str) {
+    // Crossbrowser compatibility
     // Test createContextualFragment support
     if (!("__supportsContextualFragment" in eon)) {
         try {
@@ -7894,61 +8306,71 @@ eon.fragmentFromString = function (str) {
     }
 };
 
+/*
+@function  generateElementTemplate
+@description Creates and assigns the template of the element
+@param {Object} el
+*/
 eon.generateElementTemplate = function (el) {
-
     var name = el.nodeName.toLowerCase();
+    var template = eon.imports.templates[name];
+    var clone = document.createElement("template");
 
-    // It will only enter here once per element type, it will create a template clone for all the other components to copy
-    if (!eon.registry.isTemplateRegistered(name)) {
-        
-        var template = eon.imports.templates[name];
-        var clone = document.createElement("template");
+    // All the content related checks are made to improve compatibility with browsers that do not support template
+    clone.content = document.createDocumentFragment();
 
-        // All the content related checks are made to improve compatibility with browsers that do not support template
-        clone.content = document.createDocumentFragment();
+    if (template) {
 
-        if (template) {
-
-            if (!template.content) {
-                template.content = eon.fragmentFromString(template.innerHTML);
-            }
-
-            clone = template.cloneNode(true);
-
-            if (!clone.content) {
-                clone.content = eon.fragmentFromString(clone.innerHTML);
-            }
-
+        if (!template.content) {
+            template.content = eon.fragmentFromString(template.innerHTML);
         }
 
-        eon.registry.registerTemplate(name, clone.content);
+        clone = template.cloneNode(true);
+
+        if (!clone.content) {
+            clone.content = eon.fragmentFromString(clone.innerHTML);
+        }
 
     }
 
-    el.template = eon.registry.elementTemplates[name].cloneNode(true);
-
+    el.template = clone.content;
 };
 
+/*
+@function  appendElementTemplate
+@description Appends the element template
+@param {Object} el
+*/
 eon.appendElementTemplate = function (el) {
     el.appendChild(el.template);
     delete el.template;
 };
 
+/*
+@function generateElementReferences
+@description Searches elements tagged inside the component template to have its reference saved
+@param {Object} el
+*/
 eon.generateElementReferences = function (el) {
 
     var nodes = el.template.querySelectorAll("[eon-ref]");
     var node;
 
-    el._ref = el._ref || {};
-
+    el._refs = el._refs || {};
+    
     for (var i = 0; i < nodes.length; i++) {
         node = nodes[i];
-        el._ref[node.getAttribute("eon-ref")] = node;
+        el._refs[node.getAttribute("eon-ref")] = node;
         node.removeAttribute("eon-ref");
     }
-
+    
 };
 
+/*
+@function  initSourceCallbacks
+@description Creates callbacks so that the user can retrieve either the source nodes or the source elements
+@param {Object} el
+*/
 eon.initSourceCallbacks = function (el) {
     // Creates the getSourceElements function even if it has no source elements
     el.getSourceNodes = function () {
@@ -7972,6 +8394,11 @@ eon.initSourceCallbacks = function (el) {
 
 };
 
+/*
+@function updateSourceCallbacks
+@description Updates the source callbacks in case some of the source nodes have been moved before
+@param {Object} el
+*/
 eon.updateSourceCallbacks = function (el) {
 
     var sourceNodes = el.source.childNodes;
@@ -8003,6 +8430,12 @@ eon.updateSourceCallbacks = function (el) {
 
 }
 
+/*
+@function triggerTransformed
+@description Triggers the onTransformed callback and adds the component to all the render queues
+@param {Object} el
+@param {Object} config
+*/
 eon.triggerTransformed = function (el, config) {
 
     eon.domReady(function () {
@@ -8035,14 +8468,18 @@ eon.triggerTransformed = function (el, config) {
 
         // Timeout forces triggerRender to wait child onTransformed
         // When render and bubbleRender are finished, it triggers onReady
-        // setTimeout(function () {
-            eon.registry.triggerRenders();
-        // }, 0);
+        eon.registry.triggerRenders();
 
     });
 
 };
 
+/*
+@function initializeDisplay
+@description Sets a css rule with the display provided by the config, if no display is provided it will have display block by default
+@param {Object} el
+@param {Object} config
+*/
 eon.initializeDisplay = function (el, config) {
 
     var name = el.nodeName.toLowerCase();
@@ -8063,60 +8500,60 @@ eon.initializeDisplay = function (el, config) {
 
 };
 
-eon.registerResizeListeners = function (el, config) {
 
-    // If it has onResize callback on its config we create the onResize callback
-    if (config.onResize) {
+/*
+@function createResizeCallbacks
+@description Creates the onResize callbacks for the component
+@param {Object} el
+*/
+eon.createResizeCallbacks = function (el) {
 
+    // Else all eon elements will have this pseudo onResize callback, this callback will create
+    // the real resize callback once its called for the first time
+    el.onResize = function (callback) {
+        // Once the pseudo callback has been called we set it to null so that it can create the real one
+        el.onResize = null;
+
+        eon.createCallback("onResize", el);
+        
+        // Once the element is ready, it will add the listener
         el.onReady(function () {
 
-            eon.createCallback("onResize", el);
-
+            var config = eon.imports.config[el.nodeName.toLowerCase()];
+            
             eon.addResizeListener(el, el.nodeName.toLowerCase(), function () {
                 eon.triggerAllCallbackEvents(el, config, "onResize", []);
             });
 
+            el.onResize(callback);
+
         });
-
-    } else {
-
-        // Else all eon elements will have this pseudo onResize callback, this callback will create
-        // the real resize callback once its called for the first time
-        el.onResize = function (callback) {
-            // Once the pseudo callback has been called we set it to null so that it can create the real one
-            el.onResize = null;
-
-            eon.createCallback("onResize", el);
-
-            // Once the element is ready, it will add the listener
-            el.onReady(function () {
-
-                eon.addResizeListener(el, el.nodeName.toLowerCase(), function () {
-                    eon.triggerAllCallbackEvents(el, config, "onResize", []);
-                });
-
-                el.onResize(callback);
-
-            });
-
-        }
 
     }
 
-    // Once the element is ready, it will add the listener
+    // onWindowResize callback creation
     el.onReady(function () {
+
+        var config = eon.imports.config[el.nodeName.toLowerCase()];
 
         eon.createCallback("onWindowResize", el);
 
-        eon.onResize(function () {
+        window.addEventListener("resize", function () {
             eon.triggerAllCallbackEvents(el, config, "onWindowResize", []);
-        }, el);
+        });
 
     });
 
 };
+/*
+@function  declare
+@description First function to get fired when an import is requested but before the import ajax request is 
+actually triggered, constructs the elements class, hides the element and prepares its structure and processes that the element will go through
+@param {String} name
+@param {Object} baseElement
+*/
 eon.declare = function (name, baseElement) {
-    
+
     // Specifies HTML element interface
     var baseElement = baseElement ? baseElement : HTMLElement;
 
@@ -8127,15 +8564,15 @@ eon.declare = function (name, baseElement) {
     elementClass.onCreated(function () {
 
         var el = this;
-        
+
         eon.declareCallbacks(el);
 
         eon.generateSourceFragment(el);
 
-        eon.initSourceCallbacks(el); 
-
+        eon.initSourceCallbacks(el);
+        
         eon.prepareElement(el, function () {
-            
+
             var config = eon.imports.config[el.nodeName.toLowerCase()];
 
             // Adds eon element default config properties and functions 
@@ -8149,12 +8586,12 @@ eon.declare = function (name, baseElement) {
 
             // Sets a css rule with the provided display by the config, if no display is provided it will have display block by default
             eon.initializeDisplay(el, config);
-            
+
             eon.triggerAllCallbackEvents(el, config, "onCreated");
             eon.registry.updateElementStatus(el, "created");
-            
+
         });
-        
+
         eon.registry.updateElementStatus(el, "declared");
 
     });
@@ -8167,10 +8604,12 @@ eon.declare = function (name, baseElement) {
 
             var config = eon.imports.config[el.nodeName.toLowerCase()];
 
-            // TODO: should also provide attribute check
             if (el.isFirstAttach) {
-                
+
                 el.isFirstAttach = false;
+                // Once a new element is attached for the first time we set the onReady 
+                // callback triggered property to false until all the elements are ready again
+                eon.__onReady__triggered = false;
 
                 eon.importTemplateClasses(el);
 
@@ -8186,20 +8625,17 @@ eon.declare = function (name, baseElement) {
 
                 // Updates the references for the source nodes
                 eon.updateSourceCallbacks(el);
-                
+
                 // Moves source-template elements to eon-template-clone elements by slot attribute query selector string
                 // Unslotted source-template elements will be appended to eon-clone root
                 // Note dynamic things that should be slotted must be added onCreated
                 eon.slot(el);
-                
+
                 // Callback for the first time that the element has been attached, no template imported, only created and parsed
                 eon.triggerAllCallbackEvents(el, config, "onInit");
 
                 // Interpolation data bind
                 eon.interpolation.init(el, config);
-
-                // Creates the on resize callbacks handler for the element
-                eon.registerResizeListeners(el, config);
 
                 // Begins the transformation process
                 eon.transform(el, config);
@@ -8215,13 +8651,12 @@ eon.declare = function (name, baseElement) {
 
     });
 
+    // The parentComponent property is set to null when detached of the DOM, but this value will be set again once the element is attached
     elementClass.onDetached(function () {
         this.__parentComponent = null;
     });
 
-    elementClass.onAttributeChanged(function (attrName, oldVal, newVal) {
-
-    });
+    elementClass.onAttributeChanged(function (attrName, oldVal, newVal) {});
 
     customElements.define(name, elementClass);
 
@@ -8845,13 +9280,13 @@ eon.ajax = function (url, options, cb) {
   options.password = options.password || null;
   options.cacheBusting = "cacheBusting" in options ? options.cacheBusting : false;
 
-  url = options.cacheBusting? eon.getCacheBustedUrl(url) : url;
+  url = options.cacheBusting ? eon.getCacheBustedUrl(url) : url;
 
   var xhr = options.xhr || new XMLHttpRequest();
   xhr.onreadystatechange = function () {
     if (this.readyState == 4) {
       var success = this.status >= 200 && this.status < 300;
-      if(cb) {
+      if (cb) {
         cb(success, {
           url: url,
           method: options.method,
@@ -8896,10 +9331,10 @@ eon.setLocale = function (url, options) {
 
   options = options ? options : {};
 
-  eon.ajax(url, options, function(success, obj) {
-    
+  eon.ajax(url, options, function (success, obj) {
+
     if (success) {
-      
+
       var jsonObj = JSON.parse(obj.responseText);
 
       if (jsonObj) {
@@ -8917,13 +9352,17 @@ eon.setLocale = function (url, options) {
  * @param  {[type]}  [description]
  */
 eon.util.arrayToMap = function (array) {
-  var map = new Map();
+  var result = new Map();
 
-  for (var i = 0; i < array.length; i++) {
-    map.set(i.toString(), array[i]);
+  if (array.constructor === Map) {
+    result = array;
+  } else if (array.constructor === Array) {
+    for (var i = 0; i < array.length; i++) {
+      result.set(i.toString(), array[i]);
+    }
   }
 
-  return map;
+  return result;
 };
 
 /**
@@ -8933,8 +9372,12 @@ eon.util.arrayToMap = function (array) {
 eon.util.objectToMap = function (object) {
   var map = new Map();
 
-  for(var key in object){
-    map.set(key, object[key]);
+  if (object.constructor === Map) {
+    map = object;
+  } else {
+    for (var key in object) {
+      map.set(key, object[key]);
+    }
   }
 
   return map;
@@ -8945,9 +9388,15 @@ eon.util.objectToMap = function (object) {
  */
 eon.util.mapToObject = function (map) {
   var obj = Object.create(null);
-  map.forEach(function (value, key, mapObj) {
-    mapObj[key] = value;
-});
+
+  if (map.constructor === Map) {
+    obj = map;
+  } else if (map.constructor === Object) {
+    map.forEach(function (value, key, mapObj) {
+      mapObj[key] = value;
+    });
+  }
+
   return obj;
 };
 
@@ -9607,6 +10056,219 @@ eon.data.MemoryAdapter = function () {
   return baseAdapter;
 }
 
+
+eon.dataDiff = function (config) {
+
+  var self = this;
+  config = !config || config.constructor !== Object ? {} : config;
+  
+  // ## Public Properties ##
+
+  /*
+    @property {Array} states
+    @description Stored previous data states
+  */
+  this.states = [];
+  /*
+    @property {Boolean} storeStates (TEMP)
+    @description Whether or not the previous states should be stored
+  */
+  this.storeStates = config.hasOwnProperty("storeStates") ? config.storeStates : 0;
+  
+  // ## Private Properties ##
+
+  /*
+    @property (private) {Object} _operations
+    @description Diffing result operations
+  */
+  this._operations = [];
+
+
+  // ## Public Functions ##
+
+  /*
+    @function commit
+    @description Compare and process data
+    @param {Object} data
+    @param {Object} oldData
+  */
+  this.commit = function (data, oldData) {
+    // Convert into Map object
+    data = eon.util.objectToMap(data);
+    oldData = eon.util.objectToMap(oldData);
+    // Compare and persist data
+    self._diff(data, oldData);
+    self._processState();
+    self._saveState(data);
+  };
+
+  /*
+    @function create
+    @description Create operation fallback
+    @param {Object} data
+  */
+  this.create = config.create && config.create.constructor === Function ? config.create : function (data) {
+    // Default create 
+  };
+  /*
+    @function update
+    @description Update operation fallback
+    @param {Object} data
+  */
+  this.update = config.update && config.update.constructor === Function ? config.update : function (data) {
+    // Default update 
+  };
+  /*
+    @function delete
+    @description Delete operation fallback
+    @param {Object} data
+  */
+  this.delete = config.delete && config.delete.constructor === Function ? config.delete : function (data) {
+    // Default delete 
+  };
+
+  // ## Private Functions ##
+
+  /*
+    @function (private) _diff
+    @description Store differences between objects
+    @param {Object} items
+    @param {Object} oldItems
+  */
+  this._diff = function (items, oldItems) {
+    var counter = -1;
+    var oldCounter = -1;
+    // Loop through properties in object 1
+    items.forEach(function (value, key) {
+      counter++;
+      // Check property exists on both objects
+      if (!oldItems.has(key)) {
+        // :: Create item
+        self._storeOperation("create", key, counter, value, null);
+      } else {
+        // switch (typeof (items[key])) {
+        switch (typeof (value)) {
+          // Deep compare objects
+          case "object":
+            value
+            if (!self._compare(value, oldItems.get(key))) {
+              // :: Update item
+              self._storeOperation("update", key, counter, value, oldItems.get(key));
+            };
+            break;
+          // Compare function code
+          case "function":
+            if (typeof (oldItems.get(key)) != "undefined" || (value.toString() != oldItems.get(key).toString())) {
+              // :: Update item
+              self._storeOperation("update", key, counter, value, oldItems.get(key));
+            };
+            break;
+          // Compare values
+          default:
+            if (value != oldItems.get(key)) {
+              // :: Update item
+              self._storeOperation("update", key, counter, value, oldItems.get(key));
+            };
+        }
+      }
+    });
+    // Check oldItems for any extra properties
+    oldItems.forEach(function (value, key) {
+      oldCounter++;
+      // * Undefined properties are considered nonexistent
+      if (typeof (value) == "undefined" || !items.has(key)) {
+        // :: Delete item
+        self._storeOperation("delete", key, oldCounter, items.get(key), value);
+      };
+    });
+    return true;
+  }
+  /*
+    @function (private) _compare
+    @description Whether or not there are differences between objects keys
+    @param {Object} items
+    @param {Object} oldItems
+  */
+  this._compare = function (items, oldItems) {
+    // Loop through properties in object 1
+    for (var key in items) {
+      // Check property exists on both objects
+      if (items.hasOwnProperty(key) !== oldItems.hasOwnProperty(key)) return false;
+      switch (typeof (items[key])) {
+        // Deep compare objects
+        case "object":
+          if (!self._compare(items[key], oldItems[key])) return false;
+          break;
+        // Compare function code
+        case "function":
+          if (typeof (oldItems[key]) == "undefined" || (key != "compare" && items[key].toString() != oldItems[key].toString())) return false;
+          break;
+        // Compare values
+        default:
+          if (items[key] != oldItems[key]) return false;
+      }
+    }
+    // Check old not matched keys
+    for (var key in oldItems) {
+      if (typeof (items[key]) == "undefined") return false;
+    }
+    return true;
+  }
+  /*
+    @function (private) _processState
+    @description Process data operations
+  */
+  this._processState = function () {
+    self._operations.forEach(function (operation) {
+      switch (operation.type) {
+        case "create":
+          self.create(operation);
+          break;
+        case "update":
+          self.update(operation);
+          break;
+        default:
+          self.delete(operation);
+      }
+    });
+    // Reset operations store
+    self._operations = [];
+  }
+  /*
+    @function (private) _saveState
+    @description Save state
+    @param {Map} data
+  */
+  this._saveState = function (data) {
+    if (typeof self.storeStates === "number" && self.storeStates > 0) {
+      // Check state storage limit
+      if (self.states.length >= self.storeStates) {
+        // Remove first position state
+        self.states.shift();
+      }
+      self.states.push(data);
+    }
+  }
+  /*
+    @function (private) _create
+    @description Store operation
+    @param {type} type
+    @param {Key} key
+    @param {Value} value
+    @param {Value} oldValue
+  */
+  this._storeOperation = function (type, key, position, value, oldValue) {
+    // Default create 
+    self._operations.push({
+      type: type,
+      key: key,
+      position: position,
+      newValue: value,
+      oldValue: oldValue
+    });
+  };
+
+}
 
 
 eon.validator = eon.validator || {};

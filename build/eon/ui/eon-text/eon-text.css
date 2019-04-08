@@ -73,7 +73,7 @@ eon-text.disabled .eon-text-editable:empty:before {
 }
 .eon-text-editable,
 input {
-  font-family: sans-serif;
+  font-family: inherit;
   font-size: 15px;
   padding: 0;
   -webkit-user-select: text;

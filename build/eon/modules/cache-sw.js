@@ -1,5 +1,5 @@
 
-var CACHE = 'eon-cache';
+var CACHE = "eon-cache";
 
 var debug = false;
 
@@ -12,11 +12,11 @@ var filesToCache = [
 /*
 * -- Install
 */
-self.addEventListener('install', function (e) {
-  if(debug) { console.log('[ServiceWorker] Install'); }
+self.addEventListener("install", function (e) {
+  if(debug) { console.log("[ServiceWorker] Install"); }
   e.waitUntil(
     caches.open(CACHE).then(function (cache) {
-      if(debug) { console.log('[ServiceWorker] Caching app shell'); }
+      if(debug) { console.log("[ServiceWorker] Caching app shell"); }
       return cache.addAll(filesToCache);
     })
   );
@@ -25,23 +25,23 @@ self.addEventListener('install', function (e) {
 /*
 * -- Activate
 */
-self.addEventListener('activate', function (e) {
-  if(debug) { console.log('[ServiceWorker] Activated'); }
+self.addEventListener("activate", function (e) {
+  if(debug) { console.log("[ServiceWorker] Activated"); }
   self.clients.claim();
 });
 
 /*
 * -- Fetch
 */
-self.addEventListener('fetch', function (e) {
+self.addEventListener("fetch", function (e) {
   var req = e.request;
   var url = new URL(req.url); // ** Not supported on IE
   // Check same origin sources
   if (url.origin === location.origin) {
-    if(debug) { console.log('eon cache first'); }
+    if(debug) { console.log("eon cache first"); }
     e.respondWith(cacheFirst(req));
   } else {
-    if(debug) { console.log('eon net and cache'); }
+    if(debug) { console.log("eon net and cache"); }
     e.respondWith(networkAndCache(req));
   }
 });
@@ -54,7 +54,7 @@ function cacheFirst(req) {
     return cache.match(req).then(function (cached) {
       return cached || fetch(req);
     });
-  })
+  });
 }
 
 /*

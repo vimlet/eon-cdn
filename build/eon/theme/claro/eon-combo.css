@@ -50,6 +50,13 @@ div[data-theme="claro"] eon-combo.eon-combo-focus .eon-combo-label,
 body[data-theme="claro"] eon-combo.eon-combo-focus .eon-combo-label {
   color: #57cde3;
 }
+eon-combo[theme="claro"] .eon-combo-selected,
+eon-overlay[theme="claro"] .eon-combo-selected,
+div[data-theme="claro"] eon-combo .eon-combo-selected,
+body[data-theme="claro"] eon-combo .eon-combo-selected {
+  -webkit-text-fill-color: #32a39b;
+  background-color: #aff0eb;
+}
 eon-combo[theme="claro"] .eon-combo-underline:before,
 eon-overlay[theme="claro"] .eon-combo-underline:before,
 div[data-theme="claro"] eon-combo .eon-combo-underline:before,

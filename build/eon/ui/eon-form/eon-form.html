@@ -153,9 +153,11 @@
         });
       },
 
-      handleCheckbox: function (data, node) {
+      getCheckboxDataValue: function (data, node) {
 
-        var nameAlreadyExists = data.hasOwnProperty(node.name);
+        var currentDataValue = eon.object.readFromPath(data, node.name);
+        var newDataValue = currentDataValue;
+        var nameAlreadyExists = currentDataValue ? true : false;
         var nodeValue;
 
         // First it gets the value that will be assign for this node
@@ -169,14 +171,19 @@
         if (nameAlreadyExists) {
 
           if (Object.prototype.toString.call(data[node.name]) === "[object Array]") {
-            data[node.name].push(nodeValue);
+            // data[node.name].push(nodeValue);
+            newDataValue.push(nodeValue);
           } else {
-            data[node.name] = [data[node.name], nodeValue];
+            // data[node.name] = [data[node.name], nodeValue];
+            newDataValue = [currentDataValue, nodeValue];
           }
           // Else if there is no previous data assignation to the name we just assign it
         } else {
-          data[node.name] = nodeValue;
+          // data[node.name] = nodeValue;
+          newDataValue = nodeValue;
         }
+
+        return newDataValue;
 
       },
       /*
@@ -281,67 +288,159 @@
 
       },
       /*
-      @function (private) {Boolean} _validate
-      @description Reads the schema and and the data object and compares/validates them
-      @param {Object} data
-      */
-      validate: function (data) {
+     @function (private) {Boolean} formValidate
+     @description Validates schema and sets invalid fields
+     @param {Object} data
+     */
+      formValidate: function (el, schema, data) {
+        var error = eon.validator.validate(data, schema);
+        if (error) {
+          // TODO
+          // var fields = Object.keys(data);
+          var fields = Object.keys(error);
+          var field, element;
+          
+          for (var i = 0; i < fields.length; i++) {
+
+            field = fields[i];
+            element = el.querySelector('[name="' + field + '"]');
+
+            if (element && element.eon && element.hasOwnProperty("invalid")) {
+              if (error[field]) {
+                var description = "";
+
+                for (var j = 0; j < error[field].length; j++) {
+                  description = description != "" ? description + "\r\n" : description;
+                  description = description != "" ? description + error[field][j] : error[field][j];
+                }
+
+                element.updateDescription(description);
+                element.invalid = true;
+              } else if (element.invalid) {
+                element.resetDescription();
+                element.invalid = false;
+              }
+            }
+          }
+          return error;
+        }
+      },
+
+      getNodeValue: function (data, node) {
 
         var el = this;
+        var value;
 
-        if (el.schema && eon.validator.containsSchema(el.schema)) {
+        // eon elements
+        if (node._formElement) {
 
-          el.onSchemaLoaded(function () {
+          if (node.nodeName.toLowerCase() == "eon-check" || node.nodeName.toLowerCase() == "eon-toggle") {
 
-            var error;
+            value = el._getCheckboxDataValue(data, node);
 
-            data = data ? data : el.getData();
-            error = eon.validator.validate(data, el.schema);
+          } else if (node.nodeName.toLowerCase() == "eon-group") {
 
-            if (error) {
+            value = node.value != "" ? node.value : false;
 
-              var fields = Object.keys(data);
-              var field, element;
+          } else {
 
-              for (var i = 0; i < fields.length; i++) {
+            value = node.value;
 
-                field = fields[i];
-                element = el.querySelector('[name="' + field + '"]');
+          }
+        }
 
-                if (element && element.eon && element.hasOwnProperty("invalid")) {
+        // HTML form elements
+        else if (node instanceof HTMLInputElement) {
 
-                  if (error[field]) {
+          // Handle radio
+          if (node.type.toLowerCase() == "radio") {
 
-                    var description = "";
+            if (!data.hasOwnProperty(node.name)) {
 
-                    for (var j = 0; j < error[field].length; j++) {
+              if (node.hasOwnProperty("checked") || node.checked) {
+                value = node.value;
+              } else {
+                value = false;
+              }
 
-                      description = description != "" ? description + "\r\n" : description;
-                      description = description != "" ? description + error[field][j] : error[field][j];
+            } else if (node.hasOwnProperty("checked") || node.checked) {
 
-                    }
+              value = node.value;
 
-                    element.updateDescription(description);
-                    element.invalid = true;
+            }
 
-                  } else {
+          }
 
-                    if (element.invalid) {
+          // Handle checkbox
+          else if (node.type.toLowerCase() == "checkbox") {
+            value = el._getCheckboxDataValue(data, node);
+          }
 
-                      element.resetDescription();
-                      element.invalid = false;
+          // Handle all other HTMLInputElement
+          else {
+            value = node.value;
+          }
+        }
 
-                    }
+        // Other HTML form elements
+        else if (node instanceof HTMLTextAreaElement
+          || node instanceof HTMLSelectElement) {
+          value = node.value;
+        }
 
-                  }
+        return value;
 
-                }
+      },
+
+      loopSetObject: function (obj, rootKey) {
+
+        var el = this;
+        var value, isArrayValue, isObjectValue, node, nodes;
+        
+        // Loops through the data keys and searches for the elements with that key as its name
+        for (var key in obj) {
+
+          value = obj[key];
+          key = rootKey ? rootKey + "." + key : key;
+          nodes = el.querySelectorAll("[name='" + key + "']");
+          
+          isArrayValue = (Object.prototype.toString.call(value) === '[object Array]');
+          isObjectValue = (Object.prototype.toString.call(value) === '[object Object]');
+          
+          if (nodes.length > 0) {
+
+            // if its a radio, checkbox or toggle we loop through the nodes to see if they are in the value array
+            if (el._isRadioButton(nodes[0]) || el._isCheckBox(nodes[0]) || el._isToggle(nodes[0])) {
+
+              for (var i = 0; i < nodes.length; i++) {
+                nodes[i].checked = ((isArrayValue && value.indexOf(nodes[i].value) > -1) || eon.util.isTrue(value)) ? true : false;
+              }
+
+              // if its a radio group we take the radio children and loop through them
+            } else if (el._isRadioGroup(nodes[0])) {
+
+              nodes = el.querySelectorAll("eon-radio");
+
+              for (var i = 0; i < nodes.length; i++) {
+                nodes[i].checked = (value == nodes[i].value) ? true : false;
+              }
+
+            } else {
+
+              for (var i = 0; i < nodes.length; i++) {
+
+                nodes[i].value = value;
 
               }
 
             }
 
-          });
+          } else if (isObjectValue) {
+
+            el._loopSetObject(value, key);
+
+          }
+
 
         }
 
@@ -350,6 +449,24 @@
     },
 
     functions: {
+      /*
+     @function {Boolean} validate
+     @description Reads the schema and and the data object and compares/validates them
+     @param {Object} data
+     */
+      validate: function (schema, data, cb) {
+        var el = this;
+        data = data ? data : el.getData();
+        if (schema) {
+          var error = el._formValidate(el, schema, data);
+          cb(error);
+        } else if (el.schema && eon.validator.containsSchema(el.schema)) {
+          el.onSchemaLoaded(function () {
+            var error = el._formValidate(el, schema, data);
+            cb(error);
+          });
+        }
+      },
       /*
       @function {Object} getData 
       @description Return form values as an object
@@ -362,62 +479,12 @@
         el._walkRecursive(el, el, function (node) {
 
           // Only add elements if they have name, value and not disabled
-          if (node.name !== "" && !eon.util.isTrue(node.disabled)) {
-
-            // eon elements
-            if (node._formElement) {
-              if (node.nodeName.toLowerCase() == "eon-check" || node.nodeName.toLowerCase() == "eon-toggle") {
-                el._handleCheckbox(data, node);
-              } else if (node.nodeName.toLowerCase() == "eon-group") {
-                data[node.name] = node.value != "" ? node.value : false;
-              } else {
-                data[node.name] = node.value;
-              }
-            }
-
-            // HTML form elements
-            else if (node instanceof HTMLInputElement) {
-
-              // Handle radio
-              if (node.type.toLowerCase() == "radio") {
-
-                if (!data.hasOwnProperty(node.name)) {
-
-                  if (node.hasOwnProperty("checked") || node.checked) {
-                    data[node.name] = node.value;
-                  } else {
-                    data[node.name] = false;
-                  }
-
-                } else if (node.hasOwnProperty("checked") || node.checked) {
-
-                  data[node.name] = node.value;
-
-                }
-
-              }
-
-              // Handle checkbox
-              else if (node.type.toLowerCase() == "checkbox") {
-                el._handleCheckbox(data, node);
-              }
-
-              // Handle all other HTMLInputElement
-              else {
-                data[node.name] = node.value;
-              }
-            }
-
-            // Other HTML form elements
-            else if (node instanceof HTMLTextAreaElement
-              || node instanceof HTMLSelectElement) {
-              data[node.name] = node.value;
-            }
+          if (typeof node.name == "string" && node.name !== "" && !eon.util.isTrue(node.disabled)) {
+            eon.object.assignToPath(data, node.name, el._getNodeValue(data, node));
           }
 
-
         });
-
+        
         return data;
       },
       /*
@@ -426,51 +493,10 @@
       @param {Object} data [Form data]
       */
       setData: function (data) {
-
         var el = this;
-        var value, isArrayValue, node, nodes;
-
-        // Loops through the data keys and searches for the elements with that key as its name
-        for (var key in data) {
-
-          nodes = el.querySelectorAll("[name='" + key + "']");
-          value = data[key];
-          isArrayValue = (Object.prototype.toString.call(value) === '[object Array]');
-
-          if (nodes.length > 0) {
-
-            // if its a radio, checkbox or toggle we loop through the nodes to see if they are in the value array
-            if (el._isRadioButton(nodes[0]) || el._isCheckBox(nodes[0]) || el._isToggle(nodes[0])) {
-
-              for (var i = 0; i < nodes.length; i++) {
-                nodes[i].checked = ((isArrayValue && value.indexOf(nodes[i].value) > -1) || value == nodes[i].value) ? true : false;
-              }
-
-              // if its a radio group we take the radio children and loop through them
-            } else if (el._isRadioGroup(nodes[0])) {
-
-              nodes = el.querySelectorAll("eon-radio");
-
-              for (var i = 0; i < nodes.length; i++) {
-                nodes[i].checked = (value == nodes[i].value) ? true : false;
-              }
-
-              // else just assign the value to the node
-            } else {
-
-              for (var i = 0; i < nodes.length; i++) {
-
-                nodes[i].value = value;
-
-              }
-
-            }
-
-          }
-
-        }
-
+        el._loopSetObject(data);
       },
+
       /*
       @function {Object} saveData 
       @description Saves the current data of the form elements

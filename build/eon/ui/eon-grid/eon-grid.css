@@ -91,6 +91,7 @@ eon-grid eon-grid-cell {
 }
 .eon-grid-autofitRows {
   overflow-y: hidden;
+  display: flex;
 }
 .eon-grid-entryRow {
   box-sizing: border-box;

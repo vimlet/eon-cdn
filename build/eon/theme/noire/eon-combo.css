@@ -50,6 +50,12 @@ div[data-theme="noire"] eon-combo.eon-combo-focus .eon-combo-label,
 body[data-theme="noire"] eon-combo.eon-combo-focus .eon-combo-label {
   color: #3da5b7;
 }
+eon-combo[theme="noire"] .eon-combo-highlighted,
+eon-overlay[theme="noire"] .eon-combo-highlighted,
+div[data-theme="noire"] eon-combo .eon-combo-highlighted,
+body[data-theme="noire"] eon-combo .eon-combo-highlighted {
+  background: #245d67 radial-gradient(circle, transparent 1%, #245d67 1%) center / 15000%;
+}
 eon-combo[theme="noire"] .eon-combo-underline:before,
 eon-overlay[theme="noire"] .eon-combo-underline:before,
 div[data-theme="noire"] eon-combo .eon-combo-underline:before,

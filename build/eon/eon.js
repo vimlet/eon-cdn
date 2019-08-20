@@ -4669,7 +4669,7 @@ eon.interpolation.createPropDescriptor = function (scope, keyOwnerObj, key, keyP
 @param {String} keyPath
 */
 eon.interpolation.createObjectPropDescriptors = function (el, obj, keyPath, isLocale) {
-  var value;
+  var value, newKeyPath;
 
   keyPath = keyPath + ".";
 
@@ -4688,8 +4688,8 @@ eon.interpolation.createObjectPropDescriptors = function (el, obj, keyPath, isLo
 
       // If the value is an Object then we update the keyPath and create the propDescriptors
       if (value && value.constructor === Object) {
-        keyPath = keyPath + key;
-        eon.interpolation.createObjectPropDescriptors(el, value, keyPath, isLocale);
+        newKeyPath = keyPath + key;
+        eon.interpolation.createObjectPropDescriptors(el, value, newKeyPath, isLocale);
       }
     }
   }
@@ -8328,7 +8328,7 @@ eon.processBuild = function (filePath) {
 
                     var script = document.createElement("script");
                     script.innerHTML = obj.responseText + "eon.declareBuildComponents();";
-                    document.body.appendChild(script);
+                    document.head.appendChild(script);
 
                 }
 

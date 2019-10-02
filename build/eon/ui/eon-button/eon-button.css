@@ -44,6 +44,11 @@ eon-button[design="flat"] .eon-button-button {
 eon-button[design="filled"] .eon-button-button {
   border-width: 0;
 }
+eon-button .eon-button-buttonText {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
 .eon-button-button {
   position: relative;
   display: flex;

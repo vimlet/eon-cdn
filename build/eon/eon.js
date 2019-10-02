@@ -98,6 +98,9 @@ document.head.appendChild(eon.style);
 eon.style.sheet.insertRule(".eon-until-rendered { opacity: 0; }", 0);
 // Hide eon-script
 eon.style.sheet.insertRule("eon-script { display: none; }", 0);
+// Rules for the scroll width
+eon.style.sheet.insertRule(".eonScrollWidthChecker::-webkit-scrollbar { visibility: hidden; }", 0);
+eon.style.sheet.insertRule(".eonScrollWidthChecker::-webkit-scrollbar-corner { visibility: hidden; }", 0);
 
 // ############################################################################################
 // RESPONSIVE
@@ -6932,6 +6935,7 @@ eon.util.getBrowserScrollBarWidth = function () {
     outer.style.visibility = "hidden";
     outer.style.width = "100px";
     outer.style.msOverflowStyle = "scrollbar"; // needed for WinJS apps
+    outer.classList.add("eonScrollWidthChecker");
 
     document.body.appendChild(outer);
 
@@ -8360,7 +8364,7 @@ eon.processBuild = function (filePath) {
 
     if (filePath) {
 
-      eon.pendingBuilds = eon.pendingBuilds ? eon.pendingBuilds + 1 : 1;
+        eon.pendingBuilds = eon.pendingBuilds ? eon.pendingBuilds + 1 : 1;
 
         eon.ajax(filePath, null, function (success, obj) {
 
@@ -8369,20 +8373,18 @@ eon.processBuild = function (filePath) {
                 if (obj.xhr.status === 200) {
 
                     var script = document.createElement("script");
-                    script.innerHTML = obj.responseText + "eon.declareBuildComponents();eon.pendingBuilds--;eon.resumeImports();";
+                    script.innerHTML = obj.responseText + "eon.pendingBuilds--;eon.resumeImports();";
                     document.head.appendChild(script);
 
                 }
 
             } else {
-              eon.pendingBuilds--;
-              eon.resumeImports();
+                eon.pendingBuilds--;
+                eon.resumeImports();
             }
 
         });
 
-    } else {
-        eon.declareBuildComponents();
     }
 
 }
@@ -8426,11 +8428,13 @@ eon.declareBuildComponents = function () {
                 // Saves the paths of the imported elements
                 eon.imports.paths[name] = path.substring(0, path.length - path.match(/[^\/]*$/g)[0].length);
 
-                eon.declare(name);
-                eon.prepareComponent(name, eon.build[name].content);
-
-                // Removes it from eon.build so that in the next for loop we iterate less time
-                delete eon.build[name];
+                if (document.readyState === 'loading') {  // Loading hasn't finished yet
+                    document.addEventListener('DOMContentLoaded', function () {
+                        eon.declareBuildComponent(name);
+                    });
+                } else {  // `DOMContentLoaded` has already fired
+                    eon.declareBuildComponent(name);
+                }
 
             }
 
@@ -8440,11 +8444,18 @@ eon.declareBuildComponents = function () {
 
 }
 
-document.addEventListener("DOMContentLoaded", function (event) {
-    eon.processBuild();
-});
+/*
+@function declareBuildComponent
+@description Declares a single build component
+*/
+eon.declareBuildComponent = function (name) {
 
+    eon.declare(name);
+    eon.prepareComponent(name, eon.build[name].content);
 
+    // Removes it from eon.build so that in the next for loop we iterate less time
+    delete eon.build[name];
+}
 
   
     // ############################################################################################

@@ -123,6 +123,14 @@
         reflect: true
       },
       /*
+        @property {String} initialValue
+        @description Value of the element when the element to be compared against the value to set the component as dirty
+      */
+      initialValue: {
+        value: "",
+        reflect: true
+      },
+      /*
       @property {string} displayValue
       @description The displayValue of the selected item
       */
@@ -203,6 +211,14 @@
       */
       input: {
         value: true,
+        reflect: true
+      },
+      /*
+      @property {Boolean} dropdownMinWith
+      @description Min with for the dropdown to have
+      */
+      dropdownMinWith: {
+        value: 100,
         reflect: true
       },
       /*
@@ -287,11 +303,11 @@
 
         el._refs.scroll.content.addEventListener("pointerenter", function (e) {
 
-          var previousSelectedItem = el._refs.dropDown.querySelector(".eon-combo-highlighted");
+          var previousSelectedItem = el._refs.dropDown.querySelector(".eon-combo-selected");
           var selectedItem = el._misc.items[el.value];
 
           if (previousSelectedItem) {
-            previousSelectedItem.classList.remove("eon-combo-highlighted");
+            previousSelectedItem.classList.remove("eon-combo-selected");
           }
 
         });
@@ -630,7 +646,7 @@
           item.dataset.matches = true;
           item.value = storeData.get(key)[el.idProperty];
           item.displayValue = storeData.get(key)[displayProperty];
-         
+
           el._misc.displayValueItems[item.displayValue.toString().toLowerCase()] = item;
 
           el._misc.items[item.value] = item;
@@ -826,7 +842,7 @@
         var items = el._refs.dropDown.querySelectorAll("eon-item");
         var value = el._misc.modal.inputFocus ? el._refs.modalInput.value.toLowerCase() : el._refs.input.value.toLowerCase();
         var regex = value;
-        
+
         // Escape regex
         regex = regex.replace(/[\-\[\]\/\{\}\(\)\*\+\?\.\\\^\$\|]/g, "\\$&");
 
@@ -952,15 +968,23 @@
 
         } else {
 
-          var minWidth = 100;
           var origin = el._refs.origin ? el._refs.origin : el._refs.main;
+          var width, top, left;
 
           el._refs.overlay.classList.remove("eon-combo-device");
           el._refs.overlay.classList.remove("eon-bg1-modal");
 
-          el._refs.dropDown.style.top = origin.getBoundingClientRect().top + origin.offsetHeight + 1 + "px";
-          el._refs.dropDown.style.left = origin.getBoundingClientRect().left + "px";
-          el._refs.dropDown.style.width = origin.offsetWidth < minWidth ? minWidth : origin.offsetWidth + "px";
+          width = origin.offsetWidth < el.dropdownWidth ? parseInt(el.dropdownWidth) : parseInt(origin.offsetWidth);
+
+          top = origin.getBoundingClientRect().top + origin.offsetHeight + 1;
+
+          left = origin.getBoundingClientRect().left;
+          left = (left + width) > document.body.clientWidth ? document.body.clientWidth - width - 5 : left;
+          left = left < 5 ? 5 : left;
+
+          el._refs.dropDown.style.top = top + "px";
+          el._refs.dropDown.style.left = left + "px";
+          el._refs.dropDown.style.width = width + "px";
 
         }
 
@@ -1014,12 +1038,12 @@
         var el = this;
 
         if (el._misc.highlightedItem) {
-          el._misc.highlightedItem.classList.remove("eon-combo-highlighted");
+          el._misc.highlightedItem.classList.remove("eon-combo-selected");
           el._misc.highlightedItem = null;
         }
 
         if (item) {
-          item.classList.add("eon-combo-highlighted");
+          item.classList.add("eon-combo-selected");
           el._misc.highlightedItem = item;
         }
 
@@ -1091,6 +1115,14 @@
 
       },
       /*
+        @function (private) _updateInitialValue
+        @description Updates the value
+      */
+      updateInitialValue: function () {
+        var el = this;
+        el.value = el.initialValue;
+      },
+      /*
       @function (private) _updateValue
       @description Updates the value
       */
@@ -1116,6 +1148,8 @@
 
         }
 
+        el.__dirty = el.initialValue != el.value ? true : false;
+
       },
       /*
       @function (private) _updateInvalid
@@ -1125,7 +1159,7 @@
 
         var el = this;
         var classListFn = eon.util.isTrue(el.invalid) ? "add" : "remove";
-        
+
         el.classList[classListFn]("eon-combo-error");
 
       }
@@ -1178,7 +1212,7 @@
         if (typeof item === "string") {
           item = el._misc.items[item];
         }
-        
+
         eon.triggerCallback("onSelect", el, el, [item]);
 
         if (el.__onSelect[0]) {
@@ -1241,7 +1275,7 @@
 
         var el = this;
 
-        if (el.classList.contains("eon-combo-focus")) {
+        if (el._misc.modal.active) {
 
           el.classList.remove("eon-combo-focus");
 
@@ -1375,6 +1409,9 @@
           break;
         case "readonly":
           this._updateReadOnly();
+          break;
+        case "initialValue":
+          this._updateInitialValue();
           break;
         case "value":
           this._updateValue();

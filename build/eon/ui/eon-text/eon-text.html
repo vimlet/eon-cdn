@@ -103,6 +103,14 @@
         reflect: true
       },
       /*
+        @property {String} initialValue
+        @description Value of the element when the element to be compared against the value to set the component as dirty
+      */
+      initialValue: {
+        value: "",
+        reflect: true
+      },
+      /*
         @property {String} default
         @description Value of the element when the element is reset, if will also be the value of the element if no value is provided
       */
@@ -573,6 +581,7 @@
       initValue: function () {
         var el = this;
         el._misc.initialText = !el.value ? el._misc.initialText : el.value;
+        el._misc.initialText = el.initialValue != "" ? el.initialValue : el._misc.initialText;
 
         if (!el._misc.initialText) {
 
@@ -842,6 +851,14 @@
         }
       },
       /*
+        @function (private) _updateInitialValue
+        @description Updates the value
+      */
+      updateInitialValue: function () {
+        var el = this;
+        el.value = el.initialValue;
+      },
+      /*
         @function (private) _updateValue
         @description Updates the value
       */
@@ -864,6 +881,9 @@
             el._refs.input.value = el.value;
           });
         }
+
+        el.__dirty = el.initialValue != el.value ? true : false;
+
         // ** TODO
         el._animateLabel();
       },
@@ -894,8 +914,6 @@
 
       el._misc.descriptionText = "";
 
-      el.value = el.value == "" && el._misc.initialText != "" ? el._misc.initialText : el.value;
-
       el._misc.area = {};
       el._misc.area.inputEventTriggered = false;
       el._misc.area.verticalSize = 0;
@@ -908,8 +926,12 @@
       eon.createCallback("onFocus", this);
     },
     onInit: function () {
-      this._setupRefs();
-      this._setupLabelAnimation();
+      var el = this;
+
+      el.value = el.value == "" && el._misc.initialText != "" ? el._misc.initialText : el.value;
+
+      el._setupRefs();
+      el._setupLabelAnimation();
     },
     onBubbleRender: function () {
       this._setup();
@@ -927,6 +949,9 @@
           break;
         case "readonly":
           this._updateReadOnly();
+          break;
+        case "initialValue":
+          this._updateInitialValue();
           break;
         case "value":
           this._updateValue();

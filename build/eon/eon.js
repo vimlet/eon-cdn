@@ -96,11 +96,10 @@ document.head.appendChild(eon.style);
 
 // Hides initial elements
 eon.style.sheet.insertRule(".eon-until-rendered { opacity: 0; }", 0);
+// Hides initial elements
+eon.style.sheet.insertRule(".eon-mask-on > *:not(eon-mask) { display: none !important; }", 0);
 // Hide eon-script
 eon.style.sheet.insertRule("eon-script { display: none; }", 0);
-// Rules for the scroll width
-eon.style.sheet.insertRule(".eonScrollWidthChecker::-webkit-scrollbar { visibility: hidden; }", 0);
-eon.style.sheet.insertRule(".eonScrollWidthChecker::-webkit-scrollbar-corner { visibility: hidden; }", 0);
 
 // ############################################################################################
 // RESPONSIVE
@@ -3295,7 +3294,7 @@ eon.imports.errors = eon.imports.errors || {};
 */
 eon.import = function (param) {
 
-    if (eon.pendingBuilds && eon.pendingBuilds > 0) {
+    if (eon.buildsQueue && eon.buildsQueue.length > 0) {
 
         eon.importsQueue = eon.importsQueue || [];
 
@@ -3330,7 +3329,7 @@ eon.import = function (param) {
 */
 eon.resumeImports = function () {
 
-    if (!eon.pendingBuilds || eon.pendingBuilds == 0) {
+    if (!eon.buildsQueue || eon.buildsQueue.length == 0) {
 
         eon.importsQueue = eon.importsQueue || [];
 
@@ -4008,7 +4007,7 @@ eon.registry.addToReadyQueue = function (el, fn) {
 */
 eon.registry.triggerRenders = function () {
 
-  if (eon.registry.registeredElements === eon.registry.elementStatus.transformed.length) {
+  if (eon.registry.registeredElements === eon.registry.elementStatus.transformed.length && (!eon.buildsQueue || eon.buildsQueue.length == 0)) {
 
     eon.registry.transformedQueueBreak = true;
     
@@ -4221,7 +4220,7 @@ eon.registry.isReady = function (el) {
 // Trigger global onReady
 eon.onImportsReady(function () {
 
-  if (eon.registry.elementStatus.declared.length === 0) {
+  if (eon.registry.elementStatus.declared.length === 0 && (!eon.buildsQueue || eon.buildsQueue.length == 0)) {
     eon.triggerCallback("onReady", eon);
   }
 
@@ -4541,8 +4540,8 @@ eon.interpolation.bindVariable = function (el, sources, variable, config) {
 
   }
 
-  // Marks the variable as binded so on its onTransformed callback it knows its not a wild variable that has not been binded
-  variable.__binded = true;
+  // Marks the variable as bound so on its onTransformed callback it knows its not a wild variable that has not been bound
+  variable.__bound = true;
 
 };
 
@@ -4604,7 +4603,7 @@ eon.interpolation.interpolate = function () {
 */
 eon.interpolation.bindWildVariable = function (variable) {
 
-  var isLocale, scope, bindString, bindValue, isUndefined, root, interpolations, bindedInterpolations;
+  var isLocale, scope, bindString, bindValue, isUndefined, root, interpolations, boundInterpolations;
 
   bindString = variable.getAttribute("bind");
   scope = eon.interpolation.globalScope;
@@ -4633,17 +4632,17 @@ eon.interpolation.bindWildVariable = function (variable) {
     variableBind = bindString;
   }
 
-  bindedInterpolations = eon.object.readFromPath(interpolations, variableBind);
+  boundInterpolations = eon.object.readFromPath(interpolations, variableBind);
 
-  if (!bindedInterpolations) {
-    bindedInterpolations = [];
-    eon.object.assignToPath(interpolations, variableBind, bindedInterpolations);
+  if (!boundInterpolations) {
+    boundInterpolations = [];
+    eon.object.assignToPath(interpolations, variableBind, boundInterpolations);
   }
 
-  bindedInterpolations.push(variable)
+  boundInterpolations.push(variable)
   variable.textContent = bindValue;
 
-  variable.__binded = true;
+  variable.__bound = true;
 
 };
 
@@ -5176,7 +5175,12 @@ eon.createElement = function (name, config) {
 @param {Object} el
 */
 eon.hideElement = function (el) {
-    el.classList.add("eon-until-rendered");
+    if (el.__templateMask) {
+        el.classList.add("eon-mask-on");
+        el.appendChild(el.__templateMask);
+    } else {
+        el.classList.add("eon-until-rendered");
+    }
 };
 
 /*
@@ -5185,7 +5189,19 @@ eon.hideElement = function (el) {
 @param {Object} el
 */
 eon.unhideElement = function (el) {
-    el.classList.remove("eon-until-rendered");
+
+    if (el.__templateMask) {
+
+      if (el.hasAttribute("autohide-mask") && el.getAttribute("autohide-mask") == "false") {
+        el.removeAttribute("autohide-mask");
+      } else {
+        el.classList.remove("eon-mask-on");
+        el.removeChild(el.__templateMask);
+      }
+
+    } else {
+        el.classList.remove("eon-until-rendered");
+    }
 };
 
 /*
@@ -5545,10 +5561,10 @@ both attribute and property keys are provided since they can be different when h
 */
 eon.handleReflectDefaultProperty = function (el, key, property) {
 
-    var value = el.hasOwnProperty("__" + property) ? el["__" + property] : "";
-
     // This is done in the onInit callback since we cannot set an attribute in the onCreated one
     el.onInit(function () {
+
+        var value = el.hasOwnProperty("__" + property) ? el["__" + property] : "";
 
         // Only sets the attribute if the value is not of object type
         if (typeof value !== "object") {
@@ -5616,9 +5632,9 @@ eon.createPropDescriptor = function (el, config, key, value, reflect) {
     propDescriptor.get = function () {
         return el["__" + key];
     };
-    
+
     propDescriptor.set = function (value) {
-        
+
         if (reflect) {
             // Trigger onAttributeChanged, note this will trigger also onPropertyChanged if needed
             // Only sets the attribute if the value is not of object type
@@ -5873,7 +5889,7 @@ eon.setupEonThemeListener = function (el, config) {
     // When eon theme changes it also changes the element's theme attribute and 
     // if the theme file is not imported it also imports it
     eon._onThemeChanged(function (previousTheme, newTheme) {
-        
+
         var elementName = el.nodeName.toLowerCase();
         var elementTheme = document.body.hasAttribute("theme") !== "" ? document.body.getAttribute("theme") : el.theme;
 
@@ -6008,6 +6024,33 @@ eon.generateElementTemplate = function (el) {
     }
 
     el.template = clone.content;
+    
+    eon.setupEonMask(el);
+
+};
+
+/*
+@function  setupEonMask
+@description Searches for the mask in the template
+@param {Object} el
+*/
+eon.setupEonMask = function (el) {
+  el.__templateMask = el.template.querySelector("eon-mask");
+
+  el.hideEonMask = function () {
+    if (el.__templateMask && el.__templateMask.parentNode.isEqualNode(el)) {
+      el.classList.remove("eon-mask-on");
+      el.removeChild(el.__templateMask);
+    }
+  };
+
+  el.showEonMask = function () {
+    if (el.__templateMask) {
+      el.classList.add("eon-mask-on");
+      el.appendChild(el.__templateMask);
+    }
+  };
+
 };
 
 /*
@@ -6423,228 +6466,257 @@ eon.removePropertyObserver = function (property, obj) {
 
 eon.time = eon.time || {};
 
-eon.time.isLeapYear = function (year) {
-  return (year % 4 === 0 && year % 100 !== 0) || year % 400 === 0;
-};
+  eon.time.isLeapYear = function (year) {
+    return (year % 4 === 0 && year % 100 !== 0) || year % 400 === 0;
+  };
 
-eon.time.getDaysInMonth = function (year, month) {
-  return [31, eon.time.isLeapYear(parseInt(year)) ? 29 : 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31][parseInt(month)];
-};
+  eon.time.getDaysInMonth = function (year, month) {
+    return [31, eon.time.isLeapYear(parseInt(year)) ? 29 : 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31][parseInt(month)];
+  };
 
-eon.time.getMonthNames = function (locale, format) {
-  var monthNames = [];
-  format = format ? format : "long";
-  for (var i = 0; i <= 11; i++) {
-    monthNames.push(eon.time.getMonthName(locale, i, format));
-  }
-  return monthNames;
-};
+  eon.time.getMonthNames = function (locale, format) {
+    var monthNames = [];
+    format = format ? format : "long";
+    for (var i = 0; i <= 11; i++) {
+      monthNames.push(eon.time.getMonthName(locale, i, format));
+    }
+    return monthNames;
+  };
 
-eon.time.getMonthName = function (locale, month, format) {
-  var dummyDate = new Date(2000, month, 15);
-  format = format ? format : "long";
-  return dummyDate.toLocaleString(locale, { month: format });
-};
+  eon.time.getMonthName = function (locale, month, format) {
+    var dummyDate = new Date(2000, month, 15);
+    format = format ? format : "long";
+    return dummyDate.toLocaleString(locale, { month: format });
+  };
 
-eon.time.getWeekDays = function (locale, format) {
-  var dayNames = [];
-  var dummyDate;
-  format = format ? format : "long";
-  for (var i = 1; i <= 7; i++) {
-    dummyDate = new Date(2000, 4, i);
-    dayNames.push(dummyDate.toLocaleString(locale, { weekday: format }));
-  }
-  return dayNames;
-};
+  eon.time.getWeekDays = function (locale, format) {
+    var dayNames = [];
+    var dummyDate;
+    format = format ? format : "long";
+    for (var i = 1; i <= 7; i++) {
+      dummyDate = new Date(2000, 4, i);
+      dayNames.push(dummyDate.toLocaleString(locale, { weekday: format }));
+    }
+    return dayNames;
+  };
 
-eon.time.getWeekDay = function (year, month, day) {
-  return ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"][new Date(year, month, day).getDay()];
-};
+  eon.time.getWeekDay = function (year, month, day) {
+    return ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"][new Date(year, month, day).getDay()];
+  };
 
-eon.time.getFirstWeekDay = function (locale, year, month, format) {
-  var dummyDate = new Date(year, month, 1);
-  format = format ? format : "long";
-  return dummyDate.toLocaleString(locale, {
-    weekday: format
-  });
-};
+  eon.time.getFirstWeekDay = function (locale, year, month, format) {
+    var dummyDate = new Date(year, month, 1);
+    format = format ? format : "long";
+    return dummyDate.toLocaleString(locale, {
+      weekday: format
+    });
+  };
 
-eon.time.getFirstWeekMonday = function (locale, year, month, format) {
-  var monDay, monthDays;
-  var firstWeekDay = eon.time.getFirstWeekDay(locale, year, month, format);
-  var weekPosition = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"].indexOf(firstWeekDay);
-  // Check first month reached
-  if (month === 0) {
-    month = 11;
-    year--;
-  } else {
-    month--;
-  }
-  // Get previous month days
-  monthDays = eon.time.getDaysInMonth(year, month);
-  monDay = (monthDays + 1) - weekPosition;
-  return monDay;
-};
+  eon.time.getFirstWeekMonday = function (locale, year, month, format) {
+    var monDay, monthDays;
+    var firstWeekDay = eon.time.getFirstWeekDay(locale, year, month, format);
+    var weekPosition = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"].indexOf(firstWeekDay);
+    // Check first month reached
+    if (month === 0) {
+      month = 11;
+      year--;
+    } else {
+      month--;
+    }
+    // Get previous month days
+    monthDays = eon.time.getDaysInMonth(year, month);
+    monDay = (monthDays + 1) - weekPosition;
+    return monDay;
+  };
 
-eon.time.getDateWithFormat = function (date, format, locale) {
+  eon.time.getDateWithFormat = function (date, format, locale) {
 
-  if (date) {
+    if (date) {
 
-      var dayFormat = format.match(/[d|D]{1,2}/)
-          ? format.match(/[d|D]{1,2}/)[0]
-          : undefined;
-      var monthFormat = format.match(/[M]{1,4}/)
-          ? format.match(/[M]{1,4}/)[0]
-          : undefined;
-      var yearFormat = format.match(/[y|Y]{2,4}/)
-          ? format.match(/[y|Y]{2,4}/)[0]
-          : undefined;
+      var dayFormat = format.match(/[d|D]{1,2}/) ? format.match(/[d|D]{1,2}/)[0] : null;
+      var monthFormat = format.match(/[M]{1,4}/) ? format.match(/[M]{1,4}/)[0] : null;
+      var yearFormat = format.match(/[y|Y]{2,4}/) ? format.match(/[y|Y]{2,4}/)[0] : null;
+      var hoursFormat = (format.match(/[h]{1,2}/)) ? format.match(/[h]{1,2}/)[0] : null;
+      var minutesFormat = (format.match(/[m]{1,2}/)) ? format.match(/[m]{1,2}/)[0] : null;
       var dayType, monthType, yearType, dayString, monthString, yearString;
+
       if (yearFormat) {
-          yearType = yearFormat.length > 1 ? "numeric" : "2-digit";
-          yearString = formatedMonth = date.toLocaleString([locale], {
-              year: yearType
-          });
-          format = format.replace(yearFormat, yearString);
+        yearType = yearFormat.length > 1 ? "numeric" : "2-digit";
+        yearString = formatedMonth = date.toLocaleString([locale], { year: yearType });
+        format = format.replace(yearFormat, yearString);
       }
+
       if (dayFormat) {
-          dayType = dayFormat.length > 1 ? "2-digit" : "numeric";
-          dayString = formatedMonth = date.toLocaleString([locale], {
-              day: dayType
-          });
-          format = format.replace(dayFormat, dayString);
+        dayType = dayFormat.length > 1 ? "2-digit" : "numeric";
+        dayString = formatedMonth = date.toLocaleString([locale], { day: dayType });
+        format = format.replace(dayFormat, dayString);
       }
+
       if (monthFormat) {
-          switch (monthFormat.length) {
-              case 1:
-                  monthType = "numeric";
-                  break;
-              case 3:
-                  monthType = "short";
-                  break;
-              case 4:
-                  monthType = "long";
-                  break;
-              default:
-                  monthType = "2-digit";
-          }
-          monthString = formatedMonth = date.toLocaleString([locale], {
-              month: monthType
-          });
-          format = format.replace(monthFormat, monthString);
+        switch (monthFormat.length) {
+          case 1:
+            monthType = "numeric";
+            break;
+          case 3:
+            monthType = "short";
+            break;
+          case 4:
+            monthType = "long";
+            break;
+          default:
+            monthType = "2-digit";
+        }
+        monthString = formatedMonth = date.toLocaleString([locale], {
+          month: monthType
+        });
+        format = format.replace(monthFormat, monthString);
+      }
+
+      if (hoursFormat) {
+        format.replace(hoursFormat, date.getHours());
+      }
+
+      if (minutesFormat) {
+        format.replace(minutesFormat, date.getMinutes());
       }
 
       return format;
 
-  }
-
-  return null;
-  
-};
-
-eon.time.getFormatSeparator = function (format) {
-
-  var dayFormat = (format.match(/[d|D]{1,2}/)) ? format.match(/[d|D]{1,2}/)[0] : undefined;
-  var monthFormat = (format.match(/[M]{1,4}/)) ? format.match(/[M]{1,4}/)[0] : undefined;
-  var yearFormat = (format.match(/[y|Y]{2,4}/)) ? format.match(/[y|Y]{2,4}/)[0] : undefined;
-
-  format = format.replace(dayFormat, "");
-  format = format.replace(monthFormat, "");
-  format = format.replace(yearFormat, "");
-
-  return format[0];
-
-};
-
-eon.time.getDateObjectFromString = function (value, format) {
-
-  var el = this;
-
-  var separator = eon.time.getFormatSeparator(format);
-
-  var dayFormat = (format.match(/[d|D]{1,2}/)) ? format.match(/[d|D]{1,2}/)[0] : undefined;
-  var monthFormat = (format.match(/[M]{1,4}/)) ? format.match(/[M]{1,4}/)[0] : undefined;
-  var yearFormat = (format.match(/[y|Y]{2,4}/)) ? format.match(/[y|Y]{2,4}/)[0] : undefined;
-
-  var splittedValue = value.split(separator);
-  var splittedFormat = format.split(separator);
-
-  var dayIndex = splittedFormat.indexOf(dayFormat);
-  var monthIndex = splittedFormat.indexOf(monthFormat);
-  var yearIndex = splittedFormat.indexOf(yearFormat);
-  
-  var dayValue = splittedValue[dayIndex] != "Invalid Date" ? splittedValue[dayIndex] : null;
-  var monthValue = splittedValue[monthIndex] != "Invalid Date" ? splittedValue[monthIndex] : null;
-  var yearValue = splittedValue[yearIndex] != "Invalid Date" ? splittedValue[yearIndex] : null;
-
-  return { day: dayValue, month: monthValue, year: yearValue };
-
-};
-
-eon.time.generateOutput = function (dateObj, format) {
-
-  var dayFormat = (format.match(/[d|D]{1,2}/)) ? format.match(/[d|D]{1,2}/)[0] : undefined;
-  var monthFormat = (format.match(/[M]{1,4}/)) ? format.match(/[M]{1,4}/)[0] : undefined;
-  var yearFormat = (format.match(/[y|Y]{2,4}/)) ? format.match(/[y|Y]{2,4}/)[0] : undefined;
-
-  var formatFn = function (text, format) {
-
-    text = text ? text + "" : "";
-
-    if (text.length > 0 && text.length < format.length) {
-      for (var i = 0; i < (format.length - text.length); i++) {
-        text = "0" + text;
-      }
     }
 
-    return text;
+    return null;
 
   };
 
-  if (dateObj.day) {
+  eon.time.getFormatSeparator = function (format) {
 
-    var day = formatFn(dateObj.day, dayFormat);
-    format = format.replace(dayFormat, day);
+    var dayFormat = (format.match(/[d|D]{1,2}/)) ? format.match(/[d|D]{1,2}/)[0] : undefined;
+    var monthFormat = (format.match(/[M]{1,4}/)) ? format.match(/[M]{1,4}/)[0] : undefined;
+    var yearFormat = (format.match(/[y|Y]{2,4}/)) ? format.match(/[y|Y]{2,4}/)[0] : undefined;
 
-  }
+    format = format.replace(dayFormat, "");
+    format = format.replace(monthFormat, "");
+    format = format.replace(yearFormat, "");
 
-  if (dateObj.month) {
+    return format[0];
 
-    var month = formatFn(dateObj.month, monthFormat);
-    format = format.replace(monthFormat, month);
+  };
 
-  }
+  eon.time.getDateValueObjectFromString = function (value, format) {
 
-  if (dateObj.year) {
+    var separator = eon.time.getFormatSeparator(format);
+    
+    var minutesFormat = (format.match(/[m]{1,2}/)) ? format.match(/[m]{1,2}/)[0] : null;
+    var hoursFormat = (format.match(/[h]{1,2}/)) ? format.match(/[h]{1,2}/)[0] : null;
+    var dayFormat = (format.match(/[d|D]{1,2}/)) ? format.match(/[d|D]{1,2}/)[0] : null;
+    var monthFormat = (format.match(/[M]{1,4}/)) ? format.match(/[M]{1,4}/)[0] : null;
+    var yearFormat = (format.match(/[y|Y]{2,4}/)) ? format.match(/[y|Y]{2,4}/)[0] : null;
+    var valueObj = {};
 
-    var year = formatFn(dateObj.year, yearFormat);
-    format = format.replace(yearFormat, year);
+    if (value.indexOf(":") > -1) {
+      var timeValue = value.indexOf(" ") > -1 ? value.split(" ")[1] : value;
+      valueObj.hours = timeValue.split(":")[0];
+      valueObj.minutes = timeValue.split(":")[1];
+    }
 
-  }
+    if (value.indexOf(separator) > -1) {
+      var dateValue = value.indexOf(" ") > -1 ? value.split(" ")[0].split(separator) : value.split(separator);
+      var splittedDateFormat = minutesFormat && hoursFormat ? format.split(" ")[0].split(separator) : format.split(separator);
+      var dayIndex = splittedDateFormat.indexOf(dayFormat);
+      var monthIndex = splittedDateFormat.indexOf(monthFormat);
+      var yearIndex = splittedDateFormat.indexOf(yearFormat);
+      valueObj.day = dateValue[dayIndex] != "Invalid Date" ? dateValue[dayIndex] : null;
+      valueObj.month = dateValue[monthIndex] != "Invalid Date" ? dateValue[monthIndex] : null;
+      valueObj.year = dateValue[yearIndex] != "Invalid Date" ? dateValue[yearIndex] : null;
+    }
+    
+    return valueObj;
 
-  return format;
+  };
 
-};
+  eon.time.getDateValueObjectFromDate = function (date, includeTime) {
 
-eon.time.defaultLocale = {
+    var valueObj = {
+      day: parseInt(date.toLocaleString([], { day: "numeric" })),
+      month: parseInt(date.toLocaleString([], { month: "numeric" })),
+      year: parseInt(date.toLocaleString([], { year: "numeric" })),
+      hours: date.getHours(),
+      minutes: date.getMinutes()
+    }
 
-  months: {
+    return valueObj;
 
-    long: ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"],
-    short: ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
+  };
 
-  },
+  eon.time.generateOutput = function (dateObj, format) {
 
-  weekdays: {
+    var minutesFormat = (format.match(/[m]{1,2}/)) ? format.match(/[m]{1,2}/)[0] : undefined;
+    var hoursFormat = (format.match(/[h]{1,2}/)) ? format.match(/[h]{1,2}/)[0] : undefined;
+    var dayFormat = (format.match(/[d|D]{1,2}/)) ? format.match(/[d|D]{1,2}/)[0] : undefined;
+    var monthFormat = (format.match(/[M]{1,4}/)) ? format.match(/[M]{1,4}/)[0] : undefined;
+    var yearFormat = (format.match(/[y|Y]{2,4}/)) ? format.match(/[y|Y]{2,4}/)[0] : undefined;
 
-    long: ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"],
-    short: ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"],
-    min: ["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"]
+    var formatFn = function (text, format) {
 
-  }
+      text = text ? text + "" : "";
 
-};
+      if (text.length > 0 && text.length < format.length) {
+        for (var i = 0; i < (format.length - text.length); i++) {
+          text = "0" + text;
+        }
+      }
 
+      return text;
+
+    };
+
+    if (dateObj.minutes != null && minutesFormat) {
+      var minutes = formatFn(dateObj.minutes, minutesFormat);
+      format = format.replace(minutesFormat, minutes);
+    }
+
+    if (dateObj.hours != null && hoursFormat) {
+      var hours = formatFn(dateObj.hours, hoursFormat);
+      format = format.replace(hoursFormat, hours);
+    }
+
+    if (dateObj.day != null && dayFormat) {
+      var day = formatFn(dateObj.day, dayFormat);
+      format = format.replace(dayFormat, day);
+    }
+
+    if (dateObj.month != null && monthFormat) {
+      var month = formatFn(dateObj.month, monthFormat);
+      format = format.replace(monthFormat, month);
+    }
+
+    if (dateObj.year != null && yearFormat) {
+      var year = formatFn(dateObj.year, yearFormat);
+      format = format.replace(yearFormat, year);
+    }
+
+    return format;
+
+  };
+
+  eon.time.defaultLocale = {
+
+    months: {
+
+      long: ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"],
+      short: ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
+
+    },
+
+    weekdays: {
+
+      long: ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"],
+      short: ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"],
+      min: ["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"]
+
+    }
+
+  };
 
 // Creates a namespace for requirejs
 eon.resizeObserver = eon.resizeObserver || {};
@@ -6936,6 +7008,13 @@ eon.util.getBrowserScrollBarWidth = function () {
     outer.style.width = "100px";
     outer.style.msOverflowStyle = "scrollbar"; // needed for WinJS apps
     outer.classList.add("eonScrollWidthChecker");
+
+    // Rules for the scroll width
+    if (!eon.scrollWidthCheckerRule && eon.util.getBrowser() != "IE" && eon.util.getBrowser() != "Edge") {
+      eon.style.sheet.insertRule(".eonScrollWidthChecker::-webkit-scrollbar { visibility: hidden; }", 0);
+      eon.style.sheet.insertRule(".eonScrollWidthChecker::-webkit-scrollbar-corner { visibility: hidden; }", 0);
+      eon.scrollWidthCheckerRule = true;
+    }
 
     document.body.appendChild(outer);
 
@@ -8110,7 +8189,7 @@ eon.validator.validateDateField = function (property, schema, data, errorObj) {
         // Takes the data value
         var value = propertyValue;
         // Turns that value into an object with day,month and year properties
-        var valueObj = eon.time.getDateObjectFromString(value, format);
+        var valueObj = eon.time.getDateValueObjectFromString(value, format);
         // Takes the object and applies the schema format to see if both values (the value and the schema value) are the same,
         // that would mean if follows the same format
         var schemaValue = eon.time.generateOutput(valueObj, format);
@@ -8135,7 +8214,7 @@ eon.validator.validateDateField = function (property, schema, data, errorObj) {
             // Checks if there is a minimum specified in the schema
             if (propertySchema.hasOwnProperty("minimum")) {
 
-                var minDateObj = eon.time.getDateObjectFromString(propertySchema.minimum, format);
+                var minDateObj = eon.time.getDateValueObjectFromString(propertySchema.minimum, format);
 
                 var minYear = minDateObj.year != undefined ? minDateObj.year : 0;
                 var minMonth = minDateObj.month != undefined ? (minDateObj.month - 1) : 0;
@@ -8150,7 +8229,7 @@ eon.validator.validateDateField = function (property, schema, data, errorObj) {
             // Checks if there is a maximum specified in the schema
             if (propertySchema.hasOwnProperty("maximum")) {
 
-                var maxDateObj = eon.time.getDateObjectFromString(propertySchema.minimum, format);
+                var maxDateObj = eon.time.getDateValueObjectFromString(propertySchema.minimum, format);
 
                 var maxYear = maxDateObj.year != undefined ? maxDateObj.year : 0;
                 var maxMonth = maxDateObj.month != undefined ? (maxDateObj.month - 1) : 0;
@@ -8298,7 +8377,7 @@ eon.domReady(function () {
 
         onTransformed: function () {
             
-            if (!this.__binded) {
+            if (!this.__bound) {
                 eon.interpolation.bindWildVariable(this);
             }
 
@@ -8356,36 +8435,52 @@ eon.domReady(function () {
 
 
 /*
-@function processBuild
-@description Takes either the eon.build and declares its components or it does it after requesting a build file provided by the user
-@param {String} filePath
+  @function processBuild
+  @description Takes either the eon.build and declares its components or it does it after requesting a build file provided by the user
+  @param {String} filePath
 */
 eon.processBuild = function (filePath) {
 
-    if (filePath) {
+  if (filePath && (!eon.processedBuilds || eon.processedBuilds.indexOf(filePath) == -1)) {
+    // Initiate the buildsQueue
+    eon.buildsQueue = eon.buildsQueue ? eon.buildsQueue : [];
+    // If its not already in the queue then push the given filePath
+    if (eon.buildsQueue.indexOf(filePath) == -1) {
+      eon.buildsQueue.push(filePath);
+    }
+    // Request the file only if its the first on queue, otherwise it will be called once our first build is finished processing
+    if (eon.buildsQueue.length <= 1) {
 
-        eon.pendingBuilds = eon.pendingBuilds ? eon.pendingBuilds + 1 : 1;
+      eon.ajax(filePath, null, function (success, obj) {
 
-        eon.ajax(filePath, null, function (success, obj) {
+        if (success) {
 
-            if (success) {
+          eon.processedBuilds = eon.processedBuilds || [];
+          eon.processedBuilds.push(filePath);
 
-                if (obj.xhr.status === 200) {
+          if (obj.xhr.status === 200) {
 
-                    var script = document.createElement("script");
-                    script.innerHTML = obj.responseText + "eon.pendingBuilds--;eon.resumeImports();";
-                    document.head.appendChild(script);
+            var script = document.createElement("script");
+            // Create the script and fill it with its content, also remove the build path from the queue and process the next
+            // build thats waiting on the builds queue and resume the imports
+            script.innerHTML = obj.responseText + "eon.buildsQueue.splice(eon.buildsQueue.indexOf('" + filePath + "'), 1);";
+            script.innerHTML = script.innerHTML + "if (eon.buildsQueue[0]) {eon.processBuild(eon.buildsQueue[0]);}; eon.declareBuildComponents(); eon.resumeImports();";
 
-                }
+            document.head.appendChild(script);
 
-            } else {
-                eon.pendingBuilds--;
-                eon.resumeImports();
-            }
+          }
 
-        });
+        } else {
+          // Remove the build path from the queue and process the next build thats waiting on the buildQueue and resume the imports
+          eon.buildsQueue.splice(eon.buildsQueue.indexOf(filePath), 1);
+          eon.resumeImports();
+        }
+
+      });
 
     }
+
+  }
 
 }
 
@@ -8395,52 +8490,52 @@ eon.processBuild = function (filePath) {
 */
 eon.declareBuildComponents = function () {
 
-    eon.declaredComponents = eon.declaredComponents || {};
+  eon.declaredComponents = eon.declaredComponents || {};
 
-    if (eon.build) {
+  if (eon.build) {
 
-        var names = Object.keys(eon.build);
+    var names = Object.keys(eon.build);
 
-        for (var i = 0; i < names.length; i++) {
+    for (var i = 0; i < names.length; i++) {
 
-            var name = names[i];
+      var name = names[i];
 
-            if (!eon.declared.all[name]) {
+      if (!eon.declared.all[name]) {
 
-                eon.declared.build[name] = true;
+        eon.declared.build[name] = true;
 
-                var path = eon.build[name].path;
+        var path = eon.build[name].path;
 
-                path = (path.indexOf(".html") > -1) ? path : path + "/" + name + ".html";
-                path = path.charAt(0) === "@" ? eon.getBasePathUrl(path) : path;
+        path = (path.indexOf(".html") > -1) ? path : path + "/" + name + ".html";
+        path = path.charAt(0) === "@" ? eon.getBasePathUrl(path) : path;
 
-                // Every time a new import is requested we reset the onReady and onImportsReady triggered state
-                eon.imports.ready = false;
+        // Every time a new import is requested we reset the onReady and onImportsReady triggered state
+        eon.imports.ready = false;
 
-                eon.__onImportsReady__triggered = false;
-                eon.__onReady__triggered = false;
+        eon.__onImportsReady__triggered = false;
+        eon.__onReady__triggered = false;
 
-                eon.imports.total++;
+        eon.imports.total++;
 
-                // Avoid duplicated imports while waiting XMLHttpRequest callback.
-                eon.imports.templates[name] = null;
+        // Avoid duplicated imports while waiting XMLHttpRequest callback.
+        eon.imports.templates[name] = null;
 
-                // Saves the paths of the imported elements
-                eon.imports.paths[name] = path.substring(0, path.length - path.match(/[^\/]*$/g)[0].length);
+        // Saves the paths of the imported elements
+        eon.imports.paths[name] = path.substring(0, path.length - path.match(/[^\/]*$/g)[0].length);
 
-                if (document.readyState === 'loading') {  // Loading hasn't finished yet
-                    document.addEventListener('DOMContentLoaded', function () {
-                        eon.declareBuildComponent(name);
-                    });
-                } else {  // `DOMContentLoaded` has already fired
-                    eon.declareBuildComponent(name);
-                }
-
-            }
-
+        if (document.readyState === 'loading') {  // Loading hasn't finished yet
+          document.addEventListener('DOMContentLoaded', function () {
+            eon.declareBuildComponent(name);
+          });
+        } else {  // `DOMContentLoaded` has already fired
+          eon.declareBuildComponent(name);
         }
 
+      }
+
     }
+
+  }
 
 }
 
@@ -8450,11 +8545,11 @@ eon.declareBuildComponents = function () {
 */
 eon.declareBuildComponent = function (name) {
 
-    eon.declare(name);
-    eon.prepareComponent(name, eon.build[name].content);
+  eon.declare(name);
+  eon.prepareComponent(name, eon.build[name].content);
 
-    // Removes it from eon.build so that in the next for loop we iterate less time
-    delete eon.build[name];
+  // Removes it from eon.build so that in the next for loop we iterate less time
+  delete eon.build[name];
 }
 
   

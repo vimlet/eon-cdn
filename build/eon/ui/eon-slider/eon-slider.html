@@ -44,6 +44,14 @@
         reflect: true
       },
       /*
+        @property {String} initialValue
+        @description Value of the element when the element to be compared against the value to set the component as dirty
+      */
+      initialValue: {
+        value: "",
+        reflect: true
+      },
+      /*
         @property {Number} default
         @description Value of the element when the element is reset, if will also be the value of the element if no value is provided
       */
@@ -263,10 +271,18 @@
         }
       },
       /*
-        @function (private) _setValue
+        @function (private) _updateInitialValue
+        @description Updates the value
+      */
+      updateInitialValue: function () {
+        var el = this;
+        el.value = el.initialValue;
+      },
+      /*
+        @function (private) _updateValue
         @param {String} newVal [new slider value]
       */
-      setValue: function () {
+      updateValue: function () {
         var el = this;
 
         el._refs.slider.value = el.value;
@@ -276,6 +292,8 @@
         if (el.orientation == "vertical") {
           el._updateVerticalHeight();
         }
+
+        el.__dirty = parseInt(el.initialValue) != parseInt(el.value) ? true : false;
 
         eon.triggerCallback("onChange", el);
       },
@@ -425,6 +443,7 @@
             el._refs.slider.value = ((el._refs.fill.offsetHeight / trackSize) * (max - min)) + min;
             el._refs.range.innerHTML = el._refs.slider.value;
             el.value = el._refs.slider.value;
+            el.__dirty = parseInt(el.initialValue) != parseInt(el.value) ? true : false;
           }
         }
       },
@@ -560,6 +579,8 @@
       var el = this;
 
       el.value = el.default != "" && el.value == "" ? el.default : el.value;
+      el.value = el.initialValue != "" ? el.initialValue : el.value;
+
       el._refs.slider.setAttribute("name", el.name);
       el._refs.slider.setAttribute("value", el.value);
       el._refs.slider.setAttribute("min", el.min);
@@ -595,8 +616,11 @@
         case "readonly":
           this._updateReadonly();
           break;
+        case "initialValue":
+          this._updateInitialValue();
+          break;
         case "value":
-          this._setValue();
+          this._updateValue();
           break;
         case "invalid":
           this._updateInvalid();

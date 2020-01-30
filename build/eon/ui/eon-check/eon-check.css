@@ -25,9 +25,11 @@ eon-check[readonly="false"] .eon-check-label {
 }
 .eon-check-input[type="checkbox"] + .eon-check-label .eon-check-span {
   box-sizing: border-box;
+  align-self: baseline;
   width: 22px;
+  min-width: 22px;
   height: 22px;
-  margin: -2px 5px 0 0;
+  margin: 0 5px 0 0;
   -webkit-transition: 0.3s ease all;
   -moz-transition: 0.3s ease all;
   transition: 0.3s ease all;
@@ -39,7 +41,7 @@ eon-check[readonly="false"] .eon-check-label {
 }
 .eon-check-checked[type="checkbox"] + .eon-check-label:after {
   position: absolute;
-  top: 5px;
+  top: 6px;
   left: 5px;
   width: 10px;
   height: 5px;

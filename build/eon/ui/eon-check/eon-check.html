@@ -33,6 +33,14 @@
         reflect: true
       },
       /*
+        @property {String} initialValue
+        @description Value of the element when the element to be compared against the value to set the component as dirty
+      */
+      initialValue: {
+        value: "",
+        reflect: true
+      },
+      /*
         @property {String} label 
         @description Check label
       */
@@ -194,7 +202,14 @@
         }
 
       },
-
+      /*
+        @function (private) _updateInitialValue
+        @description Updates the value
+      */
+      updateInitialValue: function () {
+        var el = this;
+        el.checked = eon.util.isTrue(el.initialValue);
+      },
       /* 
         @function (private) _updateCheck
         @description Update checked status
@@ -219,6 +234,8 @@
           el._refs.input.classList.add("eon-check-checked");
           eon.triggerCallback("onCheck", el);
         }
+
+        el.__dirty = eon.util.isTrue(el.initialValue) != eon.util.isTrue(el.checked) ? true : false;
 
       },
 
@@ -252,7 +269,10 @@
       el._refs.span.classList.add("eon-check-span", "eon-bg2-border");
       el._currentValue = el.value;
       el._refs.labelText.innerHTML = el.label;
+
       el.checked = el.default != "" && el.checked == "" ? el.default : el.checked;
+      el.checked = el.initialValue != "" ? el.initialValue : el.checked;
+      
       // Needed to avoid ripple bad performance
       el._misc.firstInteraction = true;
       // Checking or unchecking the check
@@ -286,6 +306,9 @@
           break;
         case "readonly":
           this._updateReadonly();
+          break;
+        case "initialValue":
+          this._updateInitialValue();
           break;
         case "checked":
           this._updateCheck(oldVal);

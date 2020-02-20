@@ -43,6 +43,7 @@ eon-toggle[checked="true"] .eon-toggle-circle {
 }
 .eon-toggle-input[type="checkbox"] + .eon-toggle-label .eon-toggle-span {
   width: 40px;
+  min-width: 40px;
   height: 15px;
   border-radius: 100px;
   transition: all 0.3s ease;

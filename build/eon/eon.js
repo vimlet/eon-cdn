@@ -6147,7 +6147,7 @@ eon.setupEonMask = function (el) {
   el.__templateMask = el.template.querySelector("eon-mask");
 
   el.hideEonMask = function () {
-    if (el.__templateMask && el.__templateMask.parentNode.isEqualNode(el)) {
+    if (el.__templateMask && el.__templateMask.offsetParent && el.__templateMask.parentNode.isEqualNode(el)) {
       el.classList.remove("eon-mask-on");
       el.removeChild(el.__templateMask);
     }
@@ -8609,7 +8609,7 @@ eon.declareBuildComponents = function () {
 
       var name = names[i];
 
-      if (!eon.declared.all[name]) {
+      if (!eon.declared.all[name] && !eon.declared.build[name]) {
 
         eon.declared.build[name] = true;
 

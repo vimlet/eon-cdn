@@ -105,6 +105,13 @@ div[data-theme="noire"] eon-combo .eon-combo-dropdown eon-item:hover,
 body[data-theme="noire"] eon-combo .eon-combo-dropdown eon-item:hover {
   background: #245d67 radial-gradient(circle, transparent 1%, #245d67 1%) center / 15000%;
 }
+eon-combo[theme="noire"] .eon-combo-dropdown .eon-combo-selected,
+eon-overlay[theme="noire"] .eon-combo-dropdown .eon-combo-selected,
+div[data-theme="noire"] eon-combo .eon-combo-dropdown .eon-combo-selected,
+body[data-theme="noire"] eon-combo .eon-combo-dropdown .eon-combo-selected {
+  background: #245d67 radial-gradient(circle, transparent 1%, #245d67 1%) center / 15000%;
+  color: #3da5b7;
+}
 eon-combo[theme="noire"] .eon-combo-dropdown eon-item:active,
 eon-overlay[theme="noire"] .eon-combo-dropdown eon-item:active,
 div[data-theme="noire"] eon-combo .eon-combo-dropdown eon-item:active,

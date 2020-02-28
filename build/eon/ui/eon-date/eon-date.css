@@ -265,6 +265,17 @@ eon-date[disabled="true"] {
   flex-grow: 1;
   justify-content: center;
 }
+.eon-date-picker-label {
+  font-size: 20px;
+  font-weight: bold;
+  position: relative;
+  display: flex;
+  width: 100%;
+  height: 50px;
+  box-sizing: border-box;
+  align-items: center;
+  justify-content: center;
+}
 .eon-date-header {
   font-size: 20px;
   font-weight: bold;

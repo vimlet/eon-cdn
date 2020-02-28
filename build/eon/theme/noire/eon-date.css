@@ -45,7 +45,11 @@ body[data-theme="noire"] eon-date .eon-date-underline:after {
 eon-date[theme="noire"].eon-date-focus .eon-date-label,
 eon-overlay[theme="noire"].eon-date-focus .eon-date-label,
 div[data-theme="noire"] eon-date.eon-date-focus .eon-date-label,
-body[data-theme="noire"] eon-date.eon-date-focus .eon-date-label {
+body[data-theme="noire"] eon-date.eon-date-focus .eon-date-label,
+eon-date[theme="noire"].eon-date-pickerlabel,
+eon-overlay[theme="noire"].eon-date-pickerlabel,
+div[data-theme="noire"] eon-date.eon-date-pickerlabel,
+body[data-theme="noire"] eon-date.eon-date-pickerlabel {
   color: #3da5b7;
 }
 eon-date[theme="noire"].eon-date-error .eon-date-underline:before,

@@ -186,6 +186,10 @@
 .eon-dialog-dialog object {
   opacity: 0;
 }
+/* TODO: */
+body.eon-dialog-hidden {
+  overflow-y: hidden;
+}
 @media (max-width: 600px), (max-height: 600px) {
   .eon-dialog-visible[data-mobile="true"] {
     top: 0;

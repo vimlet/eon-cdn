@@ -490,19 +490,18 @@ div[data-disabled="true"]:hover {
   display: flex;
   width: 100%;
   height: 50px;
+  justify-content: flex-end;
 }
-.eon-date-okButton {
-  position: absolute;
-  right: 0;
-  bottom: 0;
+.eon-date-footerButton {
   height: 100%;
-  width: 100%;
   display: flex;
   justify-content: center;
   align-items: center;
   font-weight: bold;
   font-size: 15px;
   cursor: pointer;
+  width: 33%;
+  max-width: 130px;
 }
 .eon-date-daysGrid {
   display: flex;

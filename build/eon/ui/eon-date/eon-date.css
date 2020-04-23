@@ -417,7 +417,7 @@ div[data-disabled="true"]:hover {
   bottom: 0;
   display: flex;
   flex-direction: column;
-  justify-content: space-evenly;
+  justify-content: center;
   align-items: center;
 }
 .eon-date-clock {
@@ -425,7 +425,10 @@ div[data-disabled="true"]:hover {
   align-items: center;
   font-size: 35px;
   width: 100%;
-  justify-content: space-evenly;
+  justify-content: center;
+}
+.eon-date-minutes {
+  margin: 0 20px;
 }
 .eon-date-hour,
 .eon-date-minutes {

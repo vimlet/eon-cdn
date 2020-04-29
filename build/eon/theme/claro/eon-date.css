@@ -32,14 +32,10 @@ div[data-theme="claro"] eon-date .eon-fg1-hoverable:hover,
 body[data-theme="claro"] eon-date .eon-fg1-hoverable:hover {
   -webkit-text-fill-color: #57cde3;
 }
-eon-date[theme="claro"] .eon-date-underline:before,
-eon-overlay[theme="claro"] .eon-date-underline:before,
-div[data-theme="claro"] eon-date .eon-date-underline:before,
-body[data-theme="claro"] eon-date .eon-date-underline:before,
-eon-date[theme="claro"] .eon-date-underline:after,
-eon-overlay[theme="claro"] .eon-date-underline:after,
-div[data-theme="claro"] eon-date .eon-date-underline:after,
-body[data-theme="claro"] eon-date .eon-date-underline:after {
+eon-date[theme="claro"].eon-date-focus .eon-date-underline,
+eon-overlay[theme="claro"].eon-date-focus .eon-date-underline,
+div[data-theme="claro"] eon-date.eon-date-focus .eon-date-underline,
+body[data-theme="claro"] eon-date.eon-date-focus .eon-date-underline {
   background: #57cde3;
 }
 eon-date[theme="claro"].eon-date-focus .eon-date-label,
@@ -52,14 +48,10 @@ div[data-theme="claro"] eon-date.eon-date-pickerlabel,
 body[data-theme="claro"] eon-date.eon-date-pickerlabel {
   color: #57cde3;
 }
-eon-date[theme="claro"].eon-date-error .eon-date-underline:before,
-eon-overlay[theme="claro"].eon-date-error .eon-date-underline:before,
-div[data-theme="claro"] eon-date.eon-date-error .eon-date-underline:before,
-body[data-theme="claro"] eon-date.eon-date-error .eon-date-underline:before,
-eon-date[theme="claro"].eon-date-error .eon-date-underline:after,
-eon-overlay[theme="claro"].eon-date-error .eon-date-underline:after,
-div[data-theme="claro"] eon-date.eon-date-error .eon-date-underline:after,
-body[data-theme="claro"] eon-date.eon-date-error .eon-date-underline:after {
+eon-date[theme="claro"].eon-date-error .eon-date-underline,
+eon-overlay[theme="claro"].eon-date-error .eon-date-underline,
+div[data-theme="claro"] eon-date.eon-date-error .eon-date-underline,
+body[data-theme="claro"] eon-date.eon-date-error .eon-date-underline {
   background: #c33232;
 }
 eon-date[theme="claro"].eon-date-error .eon-date-main,

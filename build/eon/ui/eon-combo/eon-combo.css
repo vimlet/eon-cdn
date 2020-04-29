@@ -36,6 +36,7 @@ eon-combo .eon-combo-main {
   border: none;
   border-bottom-width: 1px;
   border-bottom-style: solid;
+  position: relative;
 }
 eon-combo[filter="false"] input:hover {
   cursor: pointer;
@@ -51,29 +52,15 @@ eon-combo .eon-combo-input {
 eon-combo .eon-combo-underline {
   position: relative;
   display: block;
-  width: auto;
-}
-eon-combo .eon-combo-underline:before,
-eon-combo .eon-combo-underline:after {
   position: absolute;
-  bottom: 0;
-  width: 0;
-  top: 0;
+  bottom: -1px;
+  width: 100%;
   height: 2px;
-  content: "";
-  -webkit-transition: width 0.5s ease;
-  -moz-transition: width 0.5s ease;
-  transition: width 0.5s ease;
-}
-eon-combo .eon-combo-underline:before {
-  left: 50%;
-}
-eon-combo .eon-combo-underline:after {
-  right: 50%;
-}
-eon-combo.eon-combo-focus .eon-combo-underline:before,
-eon-combo.eon-combo-focus .eon-combo-underline:after {
-  width: 50%;
+  background: transparent;
+  -webkit-transition: 0.5s ease all;
+  -moz-transition: 0.5s ease all;
+  transition: 0.5s ease all;
+  left: 0;
 }
 eon-combo .eon-combo-dropButton {
   flex-grow: 0;

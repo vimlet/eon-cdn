@@ -32,14 +32,10 @@ div[data-theme="noire"] eon-date .eon-fg1-hoverable:hover,
 body[data-theme="noire"] eon-date .eon-fg1-hoverable:hover {
   -webkit-text-fill-color: #ffffff;
 }
-eon-date[theme="noire"] .eon-date-underline:before,
-eon-overlay[theme="noire"] .eon-date-underline:before,
-div[data-theme="noire"] eon-date .eon-date-underline:before,
-body[data-theme="noire"] eon-date .eon-date-underline:before,
-eon-date[theme="noire"] .eon-date-underline:after,
-eon-overlay[theme="noire"] .eon-date-underline:after,
-div[data-theme="noire"] eon-date .eon-date-underline:after,
-body[data-theme="noire"] eon-date .eon-date-underline:after {
+eon-date[theme="noire"].eon-date-focus .eon-date-underline,
+eon-overlay[theme="noire"].eon-date-focus .eon-date-underline,
+div[data-theme="noire"] eon-date.eon-date-focus .eon-date-underline,
+body[data-theme="noire"] eon-date.eon-date-focus .eon-date-underline {
   background: #3da5b7;
 }
 eon-date[theme="noire"].eon-date-focus .eon-date-label,
@@ -52,14 +48,10 @@ div[data-theme="noire"] eon-date.eon-date-pickerlabel,
 body[data-theme="noire"] eon-date.eon-date-pickerlabel {
   color: #3da5b7;
 }
-eon-date[theme="noire"].eon-date-error .eon-date-underline:before,
-eon-overlay[theme="noire"].eon-date-error .eon-date-underline:before,
-div[data-theme="noire"] eon-date.eon-date-error .eon-date-underline:before,
-body[data-theme="noire"] eon-date.eon-date-error .eon-date-underline:before,
-eon-date[theme="noire"].eon-date-error .eon-date-underline:after,
-eon-overlay[theme="noire"].eon-date-error .eon-date-underline:after,
-div[data-theme="noire"] eon-date.eon-date-error .eon-date-underline:after,
-body[data-theme="noire"] eon-date.eon-date-error .eon-date-underline:after {
+eon-date[theme="noire"].eon-date-error .eon-date-underline,
+eon-overlay[theme="noire"].eon-date-error .eon-date-underline,
+div[data-theme="noire"] eon-date.eon-date-error .eon-date-underline,
+body[data-theme="noire"] eon-date.eon-date-error .eon-date-underline {
   background: #c33232;
 }
 eon-date[theme="noire"].eon-date-error .eon-date-main,

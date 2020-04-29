@@ -18,10 +18,6 @@ eon-text textarea.eon-text-editable {
   overflow: auto;
   resize: none;
 }
-eon-text.eon-text-focus .eon-text-underline:before,
-eon-text.eon-text-focus .eon-text-underline:after {
-  width: 50%;
-}
 eon-text[disabled="true"] {
   pointer-events: none;
 }
@@ -67,6 +63,7 @@ eon-text.disabled .eon-text-editable:empty:before {
   display: flex;
   border-bottom-width: 1px;
   border-bottom-style: solid;
+  position: relative;
 }
 .eon-text-editable:empty:before {
   content: attr(placeholder);
@@ -98,24 +95,15 @@ input {
 .eon-text-underline {
   position: relative;
   display: block;
-  width: auto;
-}
-.eon-text-underline:before,
-.eon-text-underline:after {
   position: absolute;
-  bottom: 0px;
-  width: 0;
+  bottom: -1px;
+  width: 100%;
   height: 2px;
-  content: "";
+  background: transparent;
   -webkit-transition: 0.5s ease all;
   -moz-transition: 0.5s ease all;
   transition: 0.5s ease all;
-}
-.eon-text-underline:before {
-  left: 50%;
-}
-.eon-text-underline:after {
-  right: 50%;
+  left: 0;
 }
 .eon-text-description {
   margin-top: 5px;

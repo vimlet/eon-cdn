@@ -56,14 +56,10 @@ div[data-theme="noire"] eon-combo .eon-combo-highlighted,
 body[data-theme="noire"] eon-combo .eon-combo-highlighted {
   background: #245d67 radial-gradient(circle, transparent 1%, #245d67 1%) center / 15000%;
 }
-eon-combo[theme="noire"] .eon-combo-underline:before,
-eon-overlay[theme="noire"] .eon-combo-underline:before,
-div[data-theme="noire"] eon-combo .eon-combo-underline:before,
-body[data-theme="noire"] eon-combo .eon-combo-underline:before,
-eon-combo[theme="noire"] .eon-combo-underline:after,
-eon-overlay[theme="noire"] .eon-combo-underline:after,
-div[data-theme="noire"] eon-combo .eon-combo-underline:after,
-body[data-theme="noire"] eon-combo .eon-combo-underline:after {
+eon-combo[theme="noire"].eon-combo-focus .eon-combo-underline,
+eon-overlay[theme="noire"].eon-combo-focus .eon-combo-underline,
+div[data-theme="noire"] eon-combo.eon-combo-focus .eon-combo-underline,
+body[data-theme="noire"] eon-combo.eon-combo-focus .eon-combo-underline {
   background: #3da5b7;
 }
 eon-combo[theme="noire"].eon-combo-error .eon-combo-label,
@@ -82,14 +78,10 @@ div[data-theme="noire"] eon-combo.eon-combo-error .eon-combo-main,
 body[data-theme="noire"] eon-combo.eon-combo-error .eon-combo-main {
   border-bottom: 1px solid #c33232;
 }
-eon-combo[theme="noire"].eon-combo-error .eon-combo-underline:before,
-eon-overlay[theme="noire"].eon-combo-error .eon-combo-underline:before,
-div[data-theme="noire"] eon-combo.eon-combo-error .eon-combo-underline:before,
-body[data-theme="noire"] eon-combo.eon-combo-error .eon-combo-underline:before,
-eon-combo[theme="noire"].eon-combo-error .eon-combo-underline:after,
-eon-overlay[theme="noire"].eon-combo-error .eon-combo-underline:after,
-div[data-theme="noire"] eon-combo.eon-combo-error .eon-combo-underline:after,
-body[data-theme="noire"] eon-combo.eon-combo-error .eon-combo-underline:after {
+eon-combo[theme="noire"].eon-combo-error .eon-combo-underline,
+eon-overlay[theme="noire"].eon-combo-error .eon-combo-underline,
+div[data-theme="noire"] eon-combo.eon-combo-error .eon-combo-underline,
+body[data-theme="noire"] eon-combo.eon-combo-error .eon-combo-underline {
   background: #c33232;
 }
 eon-combo[theme="noire"] .eon-combo-dropdown eon-item,

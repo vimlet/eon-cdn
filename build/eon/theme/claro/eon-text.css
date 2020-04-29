@@ -58,12 +58,9 @@ div[data-theme="claro"] eon-text :-ms-input-placeholder,
 body[data-theme="claro"] eon-text :-ms-input-placeholder {
   color: #9a9a9a !important;
 }
-eon-text[theme="claro"] .eon-text-underline:before,
-div[data-theme="claro"] eon-text .eon-text-underline:before,
-body[data-theme="claro"] eon-text .eon-text-underline:before,
-eon-text[theme="claro"] .eon-text-underline:after,
-div[data-theme="claro"] eon-text .eon-text-underline:after,
-body[data-theme="claro"] eon-text .eon-text-underline:after {
+eon-text[theme="claro"].eon-text-focus .eon-text-underline,
+div[data-theme="claro"] eon-text.eon-text-focus .eon-text-underline,
+body[data-theme="claro"] eon-text.eon-text-focus .eon-text-underline {
   background: #57cde3;
 }
 eon-text[theme="claro"].eon-text-focus .eon-text-label,
@@ -90,12 +87,9 @@ div[data-theme="claro"] eon-text.eon-text-error .eon-text-main,
 body[data-theme="claro"] eon-text.eon-text-error .eon-text-main {
   border-bottom: 1px solid #c33232;
 }
-eon-text[theme="claro"].eon-text-error .eon-text-underline:before,
-div[data-theme="claro"] eon-text.eon-text-error .eon-text-underline:before,
-body[data-theme="claro"] eon-text.eon-text-error .eon-text-underline:before,
-eon-text[theme="claro"].eon-text-error .eon-text-underline:after,
-div[data-theme="claro"] eon-text.eon-text-error .eon-text-underline:after,
-body[data-theme="claro"] eon-text.eon-text-error .eon-text-underline:after {
+eon-text[theme="claro"].eon-text-error .eon-text-underline,
+div[data-theme="claro"] eon-text.eon-text-error .eon-text-underline,
+body[data-theme="claro"] eon-text.eon-text-error .eon-text-underline {
   background: #c33232;
 }
 eon-text[theme="claro"] .eon-text-label.eon-text-movedLabel,

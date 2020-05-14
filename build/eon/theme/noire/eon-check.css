@@ -9,9 +9,9 @@ body[data-theme="noire"] eon-check {
   /* Style of the box when the check it's disabled */
   /* Box style when the check it's checked and disabled */
 }
-eon-check[theme="noire"] .eon-check-checked[type="checkbox"] + .eon-check-label:after,
-div[data-theme="noire"] eon-check .eon-check-checked[type="checkbox"] + .eon-check-label:after,
-body[data-theme="noire"] eon-check .eon-check-checked[type="checkbox"] + .eon-check-label:after {
+eon-check[theme="noire"] .eon-check-checked[type="checkbox"] + .eon-check-label .eon-check-span:after,
+div[data-theme="noire"] eon-check .eon-check-checked[type="checkbox"] + .eon-check-label .eon-check-span:after,
+body[data-theme="noire"] eon-check .eon-check-checked[type="checkbox"] + .eon-check-label .eon-check-span:after {
   border: 2px solid #3a3a3a;
   border-top: none;
   border-right: none;
@@ -39,9 +39,9 @@ body[data-theme="noire"] eon-check .eon-check-input:disabled + .eon-check-label,
 eon-check[theme="noire"] .check[type="checkbox"]:disabled + .eon-check-label span,
 div[data-theme="noire"] eon-check .check[type="checkbox"]:disabled + .eon-check-label span,
 body[data-theme="noire"] eon-check .check[type="checkbox"]:disabled + .eon-check-label span,
-eon-check[theme="noire"] .eon-check-input[type="checkbox"]:disabled + .eon-check-label:after,
-div[data-theme="noire"] eon-check .eon-check-input[type="checkbox"]:disabled + .eon-check-label:after,
-body[data-theme="noire"] eon-check .eon-check-input[type="checkbox"]:disabled + .eon-check-label:after {
+eon-check[theme="noire"] .eon-check-input[type="checkbox"]:disabled + .eon-check-label .eon-check-span:after,
+div[data-theme="noire"] eon-check .eon-check-input[type="checkbox"]:disabled + .eon-check-label .eon-check-span:after,
+body[data-theme="noire"] eon-check .eon-check-input[type="checkbox"]:disabled + .eon-check-label .eon-check-span:after {
   color: #747474;
 }
 eon-check[theme="noire"] .eon-check-span,

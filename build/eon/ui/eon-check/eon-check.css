@@ -25,7 +25,6 @@ eon-check[readonly="false"] .eon-check-label {
 }
 .eon-check-input[type="checkbox"] + .eon-check-label .eon-check-span {
   box-sizing: border-box;
-  align-self: baseline;
   width: 22px;
   min-width: 22px;
   height: 22px;
@@ -39,11 +38,11 @@ eon-check[readonly="false"] .eon-check-label {
   border-radius: 2px;
   background-color: transparent;
 }
-.eon-check-checked[type="checkbox"] + .eon-check-label:after {
+.eon-check-checked[type="checkbox"] + .eon-check-label .eon-check-span:after {
   position: absolute;
-  top: 6px;
-  left: 5px;
-  width: 10px;
+  top: 4px;
+  left: 3px;
+  width: 11px;
   height: 5px;
   content: "";
   transform: rotate(-45deg);
@@ -58,6 +57,6 @@ eon-check[readonly="false"] .eon-check-label {
 }
 .eon-check-input:disabled + .eon-check-label,
 .check[type="checkbox"]:disabled + .eon-check-label .eon-check-span,
-.eon-check-input[type="checkbox"]:disabled + .eon-check-label:after {
+.eon-check-input[type="checkbox"]:disabled + .eon-check-label .eon-check-span:after {
   cursor: auto;
 }

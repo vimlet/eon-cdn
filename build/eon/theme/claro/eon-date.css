@@ -32,6 +32,13 @@ div[data-theme="claro"] eon-date .eon-fg1-hoverable:hover,
 body[data-theme="claro"] eon-date .eon-fg1-hoverable:hover {
   -webkit-text-fill-color: #57cde3;
 }
+eon-date[theme="claro"] .eon-date-today,
+eon-overlay[theme="claro"] .eon-date-today,
+div[data-theme="claro"] eon-date .eon-date-today,
+body[data-theme="claro"] eon-date .eon-date-today {
+  background-color: #bef2ff;
+  -webkit-text-fill-color: #57cde3;
+}
 eon-date[theme="claro"].eon-date-focus .eon-date-underline,
 eon-overlay[theme="claro"].eon-date-focus .eon-date-underline,
 div[data-theme="claro"] eon-date.eon-date-focus .eon-date-underline,

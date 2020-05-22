@@ -564,6 +564,9 @@ div[data-disabled="true"]:hover {
   font-size: 14px;
   width: 100%;
 }
+eon-date[tooltip=""] .eon-date-description {
+  display: none;
+}
 .eon-date-day,
 .eon-date-month,
 .eon-date-year {

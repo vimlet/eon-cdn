@@ -26,14 +26,14 @@ eon-text[disabled="true"] {
 eon-text.disabled .eon-text-editable:empty:before {
   content: attr(placeholder);
 }
-.eon-text-data {
+eon-text .eon-text-data {
   height: 18px;
   margin-bottom: 5px;
   flex-grow: 0;
   display: flex;
   position: relative;
 }
-.eon-text-label {
+eon-text .eon-text-label {
   position: absolute;
   transform: translate3d(0, 0, 0);
   font-size: 15px;
@@ -43,11 +43,11 @@ eon-text.disabled .eon-text-editable:empty:before {
   -moz-transition: 0.3s ease all;
   transition: 0.3s ease all;
 }
-.eon-text-label.eon-text-movedLabel {
+eon-text .eon-text-label.eon-text-movedLabel {
   transform: translate3d(10px, 33px, 0);
   pointer-events: none;
 }
-.eon-text-counter {
+eon-text .eon-text-counter {
   height: 18px;
   flex-grow: 0;
   font-size: 11px;
@@ -58,7 +58,7 @@ eon-text.disabled .eon-text-editable:empty:before {
   right: 0;
   top: 0;
 }
-.eon-text-main {
+eon-text .eon-text-main {
   flex-grow: 1;
   padding: 10px;
   box-sizing: border-box;
@@ -67,32 +67,32 @@ eon-text.disabled .eon-text-editable:empty:before {
   border-bottom-style: solid;
   position: relative;
 }
-[design="flat"] .eon-text-main {
+eon-text[design="flat"] .eon-text-main {
   border: none;
   padding: 0;
   background: transparent;
 }
-[design="flat"] .eon-text-data {
+eon-text[design="flat"] .eon-text-data {
   display: none;
 }
-[design="flat"] .eon-text-description {
+eon-text[design="flat"] .eon-text-description {
   display: none;
 }
-[design="flat"] .eon-text-underline {
+eon-text[design="flat"] .eon-text-underline {
   display: none;
 }
-.eon-text-editable:empty:before {
+eon-text .eon-text-editable:empty:before {
   content: attr(placeholder);
 }
-.eon-text-editable,
-input {
+eon-text .eon-text-editable,
+eon-text input {
   font-family: inherit;
   font-size: 15px;
   padding: 0;
   -webkit-user-select: text;
   user-select: text;
 }
-.eon-text-editable {
+eon-text .eon-text-editable {
   outline: none;
   cursor: text;
   word-wrap: break-word;
@@ -101,14 +101,14 @@ input {
   border: none !important;
   overflow: hidden;
 }
-.eon-text-editable div {
+eon-text .eon-text-editable div {
   max-width: 100%;
   word-wrap: break-word;
 }
-.eon-text-editable p {
+eon-text .eon-text-editable p {
   margin: 0;
 }
-.eon-text-underline {
+eon-text .eon-text-underline {
   position: relative;
   display: block;
   position: absolute;
@@ -118,13 +118,16 @@ input {
   background: transparent;
   left: 0;
 }
-:not([underline-anim="false"]) .eon-text-underline {
+eon-text:not([underline-anim="false"]) .eon-text-underline {
   -webkit-transition: 0.5s ease all;
   -moz-transition: 0.5s ease all;
   transition: 0.5s ease all;
 }
-.eon-text-description {
+eon-text .eon-text-description {
   margin-top: 5px;
   font-size: 14px;
   width: 100%;
+}
+eon-text[tooltip=""] .eon-text-description {
+  display: none;
 }

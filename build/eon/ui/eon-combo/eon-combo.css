@@ -92,12 +92,13 @@ eon-combo .eon-combo-matchingError {
   text-decoration: none;
 }
 eon-combo .eon-combo-description {
-  margin-top: 5px;
+  padding-top: 5px;
   font-size: 14px;
   width: 100%;
+  box-sizing: border-box;
 }
-eon-combo[tooltip=""] .eon-combo-description {
-  display: none;
+eon-combo .eon-combo-description:empty {
+  padding: 0;
 }
 .eon-combo-dropdown {
   font-size: 16px;

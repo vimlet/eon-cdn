@@ -18,9 +18,6 @@ eon-date[type="calendar"][inline="false"] {
   display: flex;
   position: relative;
 }
-eon-date[label=""] .eon-date-data {
-  display: none;
-}
 /* TIME RELATED RULES */
 eon-date[time="false"] .eon-date-subInput[data-field="hours"],
 eon-date[time="false"] .eon-date-subInput[data-field="minutes"],
@@ -560,12 +557,13 @@ div[data-disabled="true"]:hover {
   justify-content: center;
 }
 .eon-date-description {
-  margin-top: 5px;
+  padding-top: 5px;
   font-size: 14px;
   width: 100%;
+  box-sizing: border-box;
 }
-eon-date[tooltip=""] .eon-date-description {
-  display: none;
+.eon-date-description:empty {
+  padding: 0;
 }
 .eon-date-day,
 .eon-date-month,

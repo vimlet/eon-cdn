@@ -124,10 +124,11 @@ eon-text:not([underline-anim="false"]) .eon-text-underline {
   transition: 0.5s ease all;
 }
 eon-text .eon-text-description {
-  margin-top: 5px;
+  padding-top: 5px;
   font-size: 14px;
   width: 100%;
+  box-sizing: border-box;
 }
-eon-text[tooltip=""] .eon-text-description {
-  display: none;
+eon-text .eon-text-description:empty {
+  padding: 0;
 }

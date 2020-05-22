@@ -259,6 +259,3 @@ eon-slider .eon-slider-description {
   font-size: 14px;
   width: 100%;
 }
-eon-slider[description="false"] .eon-slider-description {
-  display: none;
-}

@@ -59,7 +59,7 @@ body[data-theme="claro"] eon-check .eon-check-span::before {
   border-radius: 50px;
   position: absolute;
   box-sizing: border-box;
-  transform: translate(-50%, -50%) scale(0);
+  transform: translate3d(-50%, -50%, 0) scale3d(0, 0, 0);
   width: 1.8px;
   height: 1.8px;
   visibility: hidden;
@@ -67,12 +67,14 @@ body[data-theme="claro"] eon-check .eon-check-span::before {
 eon-check[theme="claro"][checked="true"] .eon-check-span::before,
 div[data-theme="claro"] eon-check[checked="true"] .eon-check-span::before,
 body[data-theme="claro"] eon-check[checked="true"] .eon-check-span::before {
+  border-radius: 50px;
   background-color: rgba(133, 221, 236, 0.5);
   animation: ripple 0.5s ease-out;
 }
 eon-check[theme="claro"][checked="false"] .eon-check-span::before,
 div[data-theme="claro"] eon-check[checked="false"] .eon-check-span::before,
 body[data-theme="claro"] eon-check[checked="false"] .eon-check-span::before {
+  border-radius: 50px;
   background-color: rgba(222, 222, 222, 0.5);
   animation: ripple-deactive 0.5s ease-out;
 }
@@ -83,29 +85,29 @@ body[data-theme="claro"] eon-check.eon-ripple .eon-check-span::before {
 }
 @keyframes ripple {
   0% {
-    transform: scale(0, 0);
+    transform: scale3d(0, 0, 0);
     opacity: 1;
   }
   20% {
-    transform: scale(15, 15);
+    transform: scale3d(15, 15, 15);
     opacity: 1;
   }
   100% {
     opacity: 0;
-    transform: scale(22, 22);
+    transform: scale3d(22, 22, 22);
   }
 }
 @keyframes ripple-deactive {
   0% {
-    transform: scale(0, 0);
+    transform: scale3d(0, 0, 0);
     opacity: 1;
   }
   20% {
-    transform: scale(15, 15);
+    transform: scale3d(15, 15, 15);
     opacity: 1;
   }
   100% {
     opacity: 0;
-    transform: scale(22, 22);
+    transform: scale3d(22, 22, 22);
   }
 }

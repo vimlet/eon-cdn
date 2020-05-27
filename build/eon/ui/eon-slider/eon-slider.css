@@ -69,8 +69,8 @@ eon-slider input[type=range]::-ms-fill-upper {
 eon-slider input[type=range]::-ms-tooltip {
   display: none;
 }
-eon-slider[disable="false"] .eon-slider-thumb:active {
-  transform: scale(1.2);
+eon-slider:not([disable="true"]):not([readonly="true"]) .eon-slider-thumb:active {
+  transform: scale3d(1.2, 1.2, 1.2);
 }
 eon-slider[orientation="horizontal"] .eon-slider-slider {
   height: 10px;
@@ -243,10 +243,7 @@ eon-slider .eon-slider-thumb {
   display: flex;
   justify-content: center;
   align-items: center;
-}
-eon-slider eon-slider:not([disabled="true"]):not([readonly="true"]) .eon-slider-thumb:hover {
-  cursor: pointer;
-  transform: scale(1.15);
+  transform: scale3d(1, 1, 1);
 }
 eon-slider .eon-slider-display {
   position: relative;

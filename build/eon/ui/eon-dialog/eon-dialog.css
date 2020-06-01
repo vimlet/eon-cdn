@@ -76,6 +76,9 @@
   justify-content: flex-end;
   padding: 25px;
 }
+.eon-dialog-dialog[has-footer="false"] .eon-dialog-content {
+  padding: 25px;
+}
 .eon-dialog-dialog > eon-scroll,
 .eon-dialog-dialog > eon-section[type="content"] {
   flex-grow: 1;

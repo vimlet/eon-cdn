@@ -28,7 +28,8 @@ eon-toggle[checked="true"] .eon-toggle-circle {
   left: 20px;
 }
 .eon-toggle-toggle {
-  height: 22px;
+  height: 100%;
+  min-height: 22px;
   display: flex;
   align-items: center;
   position: relative;

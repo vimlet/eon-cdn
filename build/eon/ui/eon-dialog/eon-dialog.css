@@ -79,6 +79,10 @@
 .eon-dialog-dialog[has-footer="false"] .eon-dialog-content {
   padding: 25px;
 }
+.eon-dialog-dialog .eon-dialog-content {
+  padding: 25px 25px 0 25px;
+  box-sizing: border-box;
+}
 .eon-dialog-dialog > eon-scroll,
 .eon-dialog-dialog > eon-section[type="content"] {
   flex-grow: 1;

@@ -87,10 +87,6 @@
 .eon-dialog-dialog > eon-section[type="content"] {
   flex-grow: 1;
 }
-.eon-dialog-dialog .eon-dialog-content {
-  padding: 0 25px;
-  box-sizing: border-box;
-}
 .eon-dialog-dialog .eon-dialog-footer[location="left"],
 .eon-dialog-dialog[default-style="true"] .eon-dialog-footer[location="left"] > .eon-spaced-items-container {
   justify-content: flex-start;
@@ -196,7 +192,7 @@
   opacity: 0;
 }
 /* TODO: */
-body.eon-dialog-hidden {
+body.eon-dialog-block-scroll {
   overflow-y: hidden;
 }
 @media (max-width: 600px), (max-height: 600px) {

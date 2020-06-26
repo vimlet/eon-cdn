@@ -102,30 +102,20 @@ eon-number .eon-number-input[type=number] {
   -moz-appearance: textfield;
   appearance: textfield;
 }
-eon-number .eon-number-inputBar {
+eon-number .eon-number-underline {
   position: relative;
   display: block;
-  width: auto;
-}
-eon-number .eon-number-inputBar:before,
-eon-number .eon-number-inputBar:after {
   position: absolute;
-  width: 0;
+  bottom: -1px;
+  width: 100%;
   height: 2px;
-  content: "";
+  background: transparent;
+  left: 0;
+}
+eon-number:not([underline-anim="false"]) .eon-number-underline {
   -webkit-transition: 0.5s ease all;
   -moz-transition: 0.5s ease all;
   transition: 0.5s ease all;
-}
-eon-number .eon-number-inputBar:before {
-  left: 50%;
-}
-eon-number .eon-number-inputBar:after {
-  right: 50%;
-}
-eon-number .eon-number-animate:before,
-eon-number .eon-number-animate:after {
-  width: 50%;
 }
 eon-number .eon-number-description {
   padding-top: 5px;

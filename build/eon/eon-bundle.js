@@ -2731,7 +2731,7 @@ eon.getCurrentScript = function() {
     path = path.slice(1, path.length);
   
     var basePath = "";
-    for (i = 0; i < path.length; i++) {
+    for (var i = 0; i < path.length; i++) {
       basePath += "/";
       basePath += path[i];
     }
@@ -11442,8 +11442,8 @@ eon.differ.compare = function (obj1, obj2, options, type) {
     options.arrayOrder = true;
   }
 
-  obj1 = JSON.parse(JSON.stringify(obj1));
-  obj2 = JSON.parse(JSON.stringify(obj2));
+  obj1 = obj1 ? JSON.parse(JSON.stringify(obj1)) : {};
+  obj2 = obj2 ? JSON.parse(JSON.stringify(obj2)) : {};
 
   for (var key in obj1) {
     if (obj1.hasOwnProperty(key)) {

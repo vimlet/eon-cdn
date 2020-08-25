@@ -8952,10 +8952,10 @@ eon.iterate = function (iterable, batch, delay, callback) {
   if (batch == 0) {
     batch = iterable.length;
   }
-
   var current = 0;
   var nextCount = 0;
   var doneCount = 0;
+  var cbTriggered = false;
 
   var done = function () {
     doneCount++;
@@ -8984,7 +8984,8 @@ eon.iterate = function (iterable, batch, delay, callback) {
         next();
       }
     }else{
-      if(callback){
+      if(callback && !cbTriggered){
+        cbTriggered = true;
         callback();
       }
     }

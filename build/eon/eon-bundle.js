@@ -1142,17 +1142,17 @@ if (eon.polyfills.needPromisesPolyfill()) {
 
 if (eon.polyfills.needLocaleStringPolyfill()) {
     (function (proxied) {
-    Date.prototype.toLocaleString = function (locale, options) {
+  Date.prototype.toLocaleString = function (locale, options) {
 
-      if (options.month && Object.keys(options).length == 1) {
-        return eon.time.defaultLocale.months[options.month][this.getMonth()];
-      } else if (options.weekday && Object.keys(options).length == 1) {
-        return eon.time.defaultLocale.weekdays[options.weekday][this.getDay()];
-      }
+    if (options.month && (options.month == "long" || options.month == "short") && Object.keys(options).length == 1) {
+      return eon.time.defaultLocale.months[options.month][this.getMonth()];
+    } else if (options.weekday && (options.weekday == "long" || options.weekday == "short" || options.weekday == "min") && Object.keys(options).length == 1) {
+      return eon.time.defaultLocale.weekdays[options.weekday][this.getDay()];
+    }
 
-      return proxied.apply(this, arguments);
-    };
-  })(Date.prototype.toLocaleString);
+    return proxied.apply(this, arguments);
+  };
+})(Date.prototype.toLocaleString);
 }
 
 if (eon.polyfills.needClassListAddPolyfill()) {
@@ -2825,11 +2825,11 @@ eon.polyfills.needObjectAssignPolyfill = function () {
 };
 
 eon.polyfills.needLocaleStringPolyfill = function () {
-  return (new Date(1994, 1, 9).toLocaleString("en", { weekday: "short" }) !== "Wed");
-};
+  return (new Date(1994, 1, 9).toLocaleString("en", { weekday: "long" }) != "Wednesday");
+}
 
 eon.polyfills.needPromisesPolyfill = function () {
-  if(typeof Promise !== "undefined" && Promise.toString().indexOf("[native code]") !== -1){
+  if (typeof Promise !== "undefined" && Promise.toString().indexOf("[native code]") !== -1) {
     return false;
   }
   return true;
@@ -7373,9 +7373,16 @@ eon.interpolation.define = function (scope, keyOwnerObj, key, keyPath, val, isLo
   var value = val && val.constructor === Object ? JSON.parse(JSON.stringify(val)) : val;
   var newKeyPath;
 
+  // Creates a private non enumerable variable to keep the value
+  Object.defineProperty(keyOwnerObj, "__" + key, {
+    configurable: true,
+    enumerable: false,
+    value: value
+  });
+
   // Redirect get and set
   propDescriptor.get = function () {
-    return value;
+    return keyOwnerObj["__" + key];
   };
 
   propDescriptor.set = function (newValue) {
@@ -7384,7 +7391,7 @@ eon.interpolation.define = function (scope, keyOwnerObj, key, keyPath, val, isLo
     eon.triggerCallback(callbackName, scope, scope, [keyPath + key, value, newValue]);
 
     // Update property value
-    value = newValue;
+    keyOwnerObj["__" + key] = newValue;
   };
 
   Object.defineProperty(
@@ -8356,8 +8363,10 @@ eon.handleProperty = function (el, config, reflectProperties, observeProperties,
 
     // Complex property
     if (typeof value === "object" && value.hasOwnProperty("value")) {
-        if (typeof value.value === "object") {
+        if (value.value.constructor === Object) {
             value = Object.assign({}, value.value);
+        } else if (value.value.constructor === Array) {
+            value = value.value.slice();
         } else {
             value = value.value;
         }
@@ -8470,7 +8479,7 @@ eon.importPublic = function (el, config) {
             // If the element has one of the reflected attributes we send that value as the value of the property
             eon.handleProperty(el, config, el.__reflectProperties, el.__observeProperties, {
                 key: keys[i],
-                value: el.hasAttribute(attributeKey) ? el.getAttribute(attributeKey) : config.properties[keys[i]]
+                value: el.hasAttribute(attributeKey) ? el.getAttribute(attributeKey) : config.properties[keys[i]].value
             });
         }
     }
